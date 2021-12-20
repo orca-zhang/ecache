@@ -65,11 +65,13 @@ func (c *cache) get(k string) (interface{}, bool) {
 }
 
 // delete item by key from lru cache
-func (c *cache) del(k string) {
+func (c *cache) del(k string) (interface{}, bool) {
 	if e, ok := c.hmap[k]; ok {
 		delete(c.hmap, k)
 		c._remove(e)
+		return e.v, true
 	}
+	return nil, false
 }
 
 // calls f sequentially for each key and value present in the lru cache
@@ -194,7 +196,9 @@ func (c *Cache) Put(key string, val interface{}) {
 func (c *Cache) get(key string, idx, level int) (interface{}, bool) {
 	if v, b := c.insts[idx][level].get(key); b {
 		if time.Since(time.Unix(0, v.(*wrapper).ts)) > c.expire {
-			c.insts[idx][level].del(key)
+			// we don't need to remove the expired item here
+			// removal is also ok that control the memory usage before the cache is full, but will cause GC thrashing
+			// c.insts[idx][level].del(key)
 			return v, false
 		}
 		return v, b
@@ -203,18 +207,21 @@ func (c *Cache) get(key string, idx, level int) (interface{}, bool) {
 }
 
 // Get - get value of key from cache with result
-func (c *Cache) Get(key string) (interface{}, bool) {
+// if the item is expired, maybe you can also get the former item even if it returns `false`
+func (c *Cache) Get(key string) (v interface{}, b bool) {
 	idx := hashCode(key) & c.mask
 	c.locks[idx].Lock()
-	v, b := c.get(key, idx, 0)
-	if c.insts[idx][1] != nil { // (if lfu not support, loss is little)
+	if c.insts[idx][1] == nil { // (if lfu mode not support, loss is little)
+		// normal lru mode
+		v, b = c.get(key, idx, 0)
+	} else {
+		// lfu-2 mode
+		v, b = c.insts[idx][0].del(key)
 		if !b {
-			if v == nil { // expired don't refind
-				v, b = c.get(key, idx, 1) // re-find in level-1
-			}
+			// re-find in level-1
+			v, b = c.get(key, idx, 1)
 		} else {
 			// find in level-0, move to level-1
-			c.insts[idx][0].del(key)
 			c.insts[idx][1].put(key, v.(*wrapper))
 		}
 	}
@@ -231,7 +238,7 @@ func (c *Cache) Del(key string) {
 	idx := hashCode(key) & c.mask
 	c.locks[idx].Lock()
 	c.insts[idx][0].del(key)
-	if c.insts[idx][1] != nil { // (if lfu not support, loss is little)
+	if c.insts[idx][1] != nil { // (if lfu mode not support, loss is little)
 		c.insts[idx][1].del(key)
 	}
 	c.locks[idx].Unlock()
