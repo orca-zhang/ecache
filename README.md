@@ -1,7 +1,7 @@
 # 🦄 cache
 <p align="center">
   <a href="#">
-    <img src="https://github.com/orca-zhang/cache/raw/master/logo.png">
+    <img src="https://github.com/orca-zhang/cache/raw/master/logo.svg">
   </a>
 </p>
 
