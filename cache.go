@@ -162,10 +162,11 @@ func nextPowOf2(cap int) int {
 }
 
 // NewLRUCache - create lru cache
+// `bucketCnt` is buckets that shard items to reduce lock racing
 // `capPerBkt` is length of each bucket
 // can store `capPerBkt * bucketCnt` count of element in Cache at most
 // `expire` is expiration that item alive (and we only use lazy eviction here)
-func NewLRUCache(capPerBkt int, bucketCnt int, expire time.Duration) *Cache {
+func NewLRUCache(bucketCnt int, capPerBkt int, expire time.Duration) *Cache {
 	size := nextPowOf2(bucketCnt)
 	c := &Cache{make([]sync.Mutex, size), make([][2]*cache, size), size - 1, expire}
 	for i := range c.insts {

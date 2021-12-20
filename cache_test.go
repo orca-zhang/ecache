@@ -304,7 +304,7 @@ func Test_nextPowOf2(t *testing.T) {
 }
 
 func Test_timeout(t *testing.T) {
-	lc := NewLRUCache(1, 2, 100*time.Millisecond)
+	lc := NewLRUCache(2, 1, 100*time.Millisecond)
 	lc.Put("1", "2")
 	if v, ok := lc.Get("1"); !ok || v != "2" {
 		t.Error("case 1 failed")
@@ -316,7 +316,7 @@ func Test_timeout(t *testing.T) {
 }
 
 func Test_LRUCache(t *testing.T) {
-	lc := NewLRUCache(3, 1, 1*time.Second)
+	lc := NewLRUCache(1, 3, 1*time.Second)
 	lc.Put("1", "1")
 	lc.Put("2", "2")
 	lc.Put("3", "3")
@@ -330,7 +330,7 @@ func Test_LRUCache(t *testing.T) {
 }
 
 func Test_LFUCache(t *testing.T) {
-	lc := NewLRUCache(3, 1, 1*time.Second).LFU(1)
+	lc := NewLRUCache(1, 3, 1*time.Second).LFU(1)
 	lc.Put("1", "1")
 	lc.Put("2", "2")
 	lc.Put("3", "3")
@@ -352,7 +352,7 @@ func Test_LFUCache(t *testing.T) {
 }
 
 func Test_concurrent(t *testing.T) {
-	lc := NewLRUCache(1, 4, 2*time.Second)
+	lc := NewLRUCache(4, 1, 2*time.Second)
 	var wg sync.WaitGroup
 	for index := 0; index < 1000000; index++ {
 		wg.Add(3)
@@ -373,7 +373,7 @@ func Test_concurrent(t *testing.T) {
 }
 
 func Test_concurrentLFU(t *testing.T) {
-	lc := NewLRUCache(1, 4, 2*time.Second).LFU(1)
+	lc := NewLRUCache(4, 1, 2*time.Second).LFU(1)
 	var wg sync.WaitGroup
 	for index := 0; index < 1000000; index++ {
 		wg.Add(3)
