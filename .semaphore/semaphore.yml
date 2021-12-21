@@ -12,7 +12,6 @@ blocks:
           commands:
             - sudo apt-get install redis-server -y
             - service redis-server start
-            - null
             - sem-version go 1.11
             - export GO111MODULE=on
             - export GOPATH=~/go
