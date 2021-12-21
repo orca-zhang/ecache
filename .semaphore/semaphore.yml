@@ -6,7 +6,7 @@ agent:
     os_image: ubuntu1804
   containers:
     - name: main
-      image: 'registry.semaphoreci.com/golang:1.11'
+      image: 'registry.semaphoreci.com/golang:1.14'
     - name: cache
       image: 'registry.semaphoreci.com/redis:5.0'
 blocks:
@@ -15,8 +15,7 @@ blocks:
       jobs:
         - name: go test
           commands:
-            - sem-version go 1.11
-            - export GO111MODULE=on
+            - export GO111MODULE=off
             - export GOPATH=~/go
             - 'export PATH=/home/semaphore/go/bin:$PATH'
             - checkout
