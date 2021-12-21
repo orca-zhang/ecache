@@ -329,8 +329,8 @@ func Test_LRUCache(t *testing.T) {
 	}
 }
 
-func Test_LFUCache(t *testing.T) {
-	lc := NewLRUCache(1, 3, 1*time.Second).LFU(1)
+func Test_LRU2Cache(t *testing.T) {
+	lc := NewLRUCache(1, 3, 1*time.Second).LRU2(1)
 	lc.Put("1", "1")
 	lc.Put("2", "2")
 	lc.Put("3", "3")
@@ -349,31 +349,37 @@ func Test_LFUCache(t *testing.T) {
 	if _, ok := lc.Get("4"); ok {
 		t.Error("case 4 failed")
 	}
+	lc.Put("1", "1")
+	lc.Del("1")
+	if _, ok := lc.Get("1"); ok {
+		t.Error("case 4 failed")
+	}
 }
 
+var lcx = NewLRUCache(4, 1, 2*time.Second)
+
 func Test_concurrent(t *testing.T) {
-	lc := NewLRUCache(4, 1, 2*time.Second)
 	var wg sync.WaitGroup
 	for index := 0; index < 1000000; index++ {
 		wg.Add(3)
 		go func() {
-			lc.Put("1", "2")
+			lcx.Put("1", "2")
 			wg.Done()
 		}()
 		go func() {
-			lc.Get("1")
+			lcx.Get("1")
 			wg.Done()
 		}()
 		go func() {
-			lc.Del("1")
+			lcx.Del("1")
 			wg.Done()
 		}()
 	}
 	wg.Wait()
 }
 
-func Test_concurrentLFU(t *testing.T) {
-	lc := NewLRUCache(4, 1, 2*time.Second).LFU(1)
+func Test_concurrentLRU2(t *testing.T) {
+	lc := NewLRUCache(4, 1, 2*time.Second).LRU2(1)
 	var wg sync.WaitGroup
 	for index := 0; index < 1000000; index++ {
 		wg.Add(3)
