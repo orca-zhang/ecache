@@ -2,7 +2,7 @@ package dist
 
 import (
 	"context"
-	// "sync"
+	"sync"
 	"testing"
 	"time"
 
@@ -40,7 +40,8 @@ func TestBind(t *testing.T) {
 	lc2.Put("3", "1")
 
 	// bind them into a pool
-	dist.Bind("lc", lc1, lc2)
+	dist.Bind("lc", lc1)
+	dist.Bind("lc", lc2)
 
 	time.Sleep(3 * time.Second)
 
@@ -57,13 +58,12 @@ func TestBind(t *testing.T) {
 	}
 }
 
-/*
 func TestConcurrent(t *testing.T) {
 	lc := cache.NewLRUCache(4, 1, 2*time.Second).LRU2(1)
 	dist.Bind("lc", lc)
 	var wg sync.WaitGroup
-	for index := 0; index < 1000000; index++ {
-		wg.Add(3)
+	for index := 0; index < 10000; index++ {
+		wg.Add(2)
 		go func() {
 			lc.Put("1", "2")
 			wg.Done()
@@ -72,10 +72,14 @@ func TestConcurrent(t *testing.T) {
 			lc.Get("1")
 			wg.Done()
 		}()
+	}
+	for index := 0; index < 100; index++ {
+		wg.Add(1)
 		go func() {
+			time.Sleep(50 * time.Millisecond)
 			dist.OnDel("lc", "1")
 			wg.Done()
 		}()
 	}
 	wg.Wait()
-}*/
+}
