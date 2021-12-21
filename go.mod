@@ -1,3 +1,3 @@
 module github.com/orca-zhang/cache
 
-go 1.12
+go 1.11
