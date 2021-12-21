@@ -100,13 +100,13 @@ c.Del("uid1")
 
 ## 特别场景
 
-#### LRU-2模式（[什么是LRU-2](#什么是LRU-2)）
+### LRU-2模式（[什么是LRU-2](#什么是LRU-2)）
 > 直接在`NewLRUCache()`后面跟`.LRU2(<num>)`就好，参数`<num>`代表LRU2热队列的item上限个数（每个桶）
 ``` go
 var c = cache.NewLRUCache(16, 200, 10 * time.Second).LRU2(1024)
 ```
 
-#### 空缓存哨兵（不存在的对象不用再回源）
+### 空缓存哨兵（不存在的对象不用再回源）
 ``` go
 // 设置的时候直接给`nil`就好
 c.Put("uid1", nil)
@@ -123,23 +123,25 @@ if v, ok := c.Get("uid1"); ok {
 // 如果内存缓存没有查询到，下面再回源查redis/db
 ```
 
-#### 统计缓存使用情况（实现超级简单，注入inspector后，每个操作只多了一次原子操作）
+## 统计缓存使用情况
 
-> 引入stats包
+> 实现超级简单，注入inspector后，每个操作只多了一次原子操作，具体看[代码](/stats/stats.go#L25)
+
+##### 引入stats包
 ``` go
 import (
     "github.com/orca-zhang/cache/stats"
 )
 ```
 
-> 绑定缓存实例（名称为自定义的池子名称，内部会按名称聚合）
+#### 绑定缓存实例（名称为自定义的池子名称，内部会按名称聚合）
 ``` go
 var _ = stats.Bind("user", c)
 var _ = stats.Bind("user", c, c1, c2)
 var _ = stats.Bind("room", caches...)
 ```
 
-> 打印统计信息
+#### 打印统计信息
 ``` go
 	stats.Stats().Range(func(k, v interface{}) bool {
 		fmt.Printf("stats: %s %+v\n", k, v)
@@ -147,29 +149,32 @@ var _ = stats.Bind("room", caches...)
 	})
 ```
 
-#### 分布式一致性组件
+## 分布式一致性组件
 
-> 引入dist包
+#### 引入dist包
 ``` go
 import (
     "github.com/orca-zhang/cache/dist"
 )
 ```
 
-> 绑定缓存实例（名称为自定义的池子名称，内部会按名称聚合）
+#### 绑定缓存实例
+> 名称为自定义的池子名称，内部会按名称聚合\
+> 可以放在全局，不依赖初始化
 ``` go
 var _ = dist.Bind("user", c)
 var _ = dist.Bind("user", c, c1, c2)
 var _ = dist.Bind("token", caches...)
 ```
 
-> 绑定redis client（go-redis@v7以下版本，其他版本WIP，也可以自行实现dist.RedisCli接口）\
+#### 绑定redis client（go-redis@v7以下版本）
+> 其他库和v7以上版本的开发中，也可以自行实现dist.RedisCli接口\
 > 绑定成功后，所有Put和Del操作会自动同步到所有同一个池子的实例（所有节点）
 ``` go
 	dist.Init(dist.GoRedis(redisCli)) // redisCli是*redis.RedisClient类型
 ```
 
-> 也可以主动通知
+#### 也可以主动通知
 ``` go
 	dist.OnDel("user", "uid1") // 通知所有节点、所有实例删除
 	dist.OnPut("user", "uid1") // 通知除了当前节点的所有节点、所有实例删除
