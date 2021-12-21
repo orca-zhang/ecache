@@ -151,33 +151,58 @@ stats.Stats().Range(func(k, v interface{}) bool {
 
 ## 分布式一致性组件
 
-#### 引入dist包
+### 引入dist包
 ``` go
 import (
     "github.com/orca-zhang/cache/dist"
 )
 ```
 
-#### 绑定缓存实例
+### 绑定缓存实例
 > 名称为自定义的池子名称，内部会按名称聚合\
-> 可以放在全局，不依赖初始化
+> ⚠️可以放在全局，不依赖初始化
 ``` go
 var _ = dist.Bind("user", c)
 var _ = dist.Bind("user", c, c1, c2)
 var _ = dist.Bind("token", caches...)
 ```
 
-#### 绑定redis client（go-redis@v7以下版本）
-> 其他库和v7以上版本的开发中，也可以自行实现dist.RedisCli接口
+### 绑定redis client
+> 目前支持redigo和goredis，其他库可以自行实现dist.RedisCli接口，或者提issue给我
+
+#### go-redis@v7及以下版本
 ``` go
+import (
+    "github.com/orca-zhang/cache/dist/goredis/v7"
+)
+
 dist.Init(dist.GoRedis(redisCli)) // redisCli是*redis.RedisClient类型
+dist.Init(dist.GoRedis(redisCli, 100000)) // 第二个参数是channel缓冲区大小，默认100
 ```
 
-#### 主动通知
+#### go-redis@v8及以上版本
 ``` go
-// 当db的数据发生变化或者删除时
-// 通知所有节点、所有实例删除（包括本机）
-// 未初始化或者网络错误会降级成只处理本机所有实例
+import (
+    "github.com/orca-zhang/cache/dist/goredis"
+)
+
+dist.Init(dist.GoRedis(redisCli)) // redisCli是*redis.RedisClient类型
+dist.Init(dist.GoRedis(redisCli, 100000)) // 第二个参数是channel缓冲区大小，默认100
+```
+
+#### redigo
+``` go
+import (
+    "github.com/orca-zhang/cache/dist/redigo"
+)
+
+dist.Init(dist.Redigo(pool)) // pool是*redis.Pool类型
+```
+
+#### 主动通知所有节点、所有实例删除（包括本机）
+> 当db的数据发生变化或者删除时调用\
+> 发生错误时会降级成只处理本机所有实例（比如未初始化或者网络错误）
+``` go
 dist.OnDel("user", "uid1")
 ```
 
