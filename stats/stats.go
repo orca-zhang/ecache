@@ -16,10 +16,10 @@ type StatsNode struct {
 }
 
 // Bind - to stats a cache
-// `category` can be used to classify instances that store same items
-func Bind(category string, caches ...*cache.Cache) error {
+// `pool` can be used to classify instances that store same items
+func Bind(pool string, caches ...*cache.Cache) error {
 	v := &StatsNode{}
-	m.LoadOrStore(category, v)
+	m.LoadOrStore(pool, v)
 	for _, c := range caches {
 		c.Inspect(func(action int, _ string, ok int) {
 			// very, very, very low-cost for stats
