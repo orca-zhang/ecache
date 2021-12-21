@@ -29,7 +29,7 @@
 - ✅ 代码量<300行、30s完成接入
 - 🚀 高性能、极简设计、并发安全
 - 🎉 同时支持`LRU` 和 `LRU-2`模式
-- 🦖 额外小组件支持分布式一致性（WIP）
+- 🦖 额外小组件支持分布式一致性
 
 ## 如何使用
 
@@ -123,6 +123,58 @@ if v, ok := c.Get("uid1"); ok {
 // 如果内存缓存没有查询到，下面再回源查redis/db
 ```
 
+#### 统计缓存使用情况（实现超级简单，注入inspector后，每个操作只多了一次原子操作）
+
+> 引入stats包
+``` go
+import (
+    "github.com/orca-zhang/cache/stats"
+)
+```
+
+> 绑定缓存实例（名称为自定义的池子名称，内部会按名称聚合）
+``` go
+var _ = stats.Bind("user", c)
+var _ = stats.Bind("user", c, c1, c2)
+var _ = stats.Bind("room", caches...)
+```
+
+> 打印统计信息
+``` go
+	stats.Stats().Range(func(k, v interface{}) bool {
+		fmt.Printf("stats: %s %+v\n", k, v)
+		return true
+	})
+```
+
+#### 分布式一致性组件
+
+> 引入dist包
+``` go
+import (
+    "github.com/orca-zhang/cache/dist"
+)
+```
+
+> 绑定缓存实例（名称为自定义的池子名称，内部会按名称聚合）
+``` go
+var _ = dist.Bind("user", c)
+var _ = dist.Bind("user", c, c1, c2)
+var _ = dist.Bind("token", caches...)
+```
+
+> 绑定redis client（go-redis@v7以下版本，其他版本WIP，也可以自行实现dist.RedisCli接口）\
+> 绑定成功后，所有Put和Del操作会自动同步到所有同一个池子的实例（所有节点）
+``` go
+	dist.Init(dist.GoRedis(redisCli)) // redisCli是*redis.RedisClient类型
+```
+
+> 也可以主动通知
+``` go
+	dist.OnDel("user", "uid1") // 通知所有节点、所有实例删除
+	dist.OnPut("user", "uid1") // 通知除了当前节点的所有节点、所有实例删除
+```
+
 # 不希望你白来
 
 - 客官，既然来了，学点东西再走吧！
@@ -181,7 +233,7 @@ if v, ok := c.Get("uid1"); ok {
 - 为了实现简单，我们这里实现的是`LRU-2`，也就是第2次访问就放到热队列里，并不记录访问次数
 - 主要优化的是热key的缓存命中率
 
-### 分布式一致性组件（WIP - 开发中）
+### 分布式一致性组件
 
 - 这里其实简单的利用了redis的pubsub功能
 - 删除item的时候，它会通知到其他所有节点
