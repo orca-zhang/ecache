@@ -22,15 +22,14 @@ type RedisCli interface {
 }
 
 var redisCli RedisCli
-var lock = &sync.Mutex{}
-var cacheMap = make(map[string][]*cache.Cache, 0)
+var m sync.Map
 
 func delAll(pool, key string) {
-	lock.Lock()
-	for _, c := range cacheMap[pool] {
-		c.Del(key)
+	if caches, _ := m.Load(pool); caches != nil {
+		for _, c := range *(caches.(*[]*cache.Cache)) {
+			c.Del(key)
+		}
 	}
-	lock.Unlock()
 }
 
 func Init(r RedisCli) {
@@ -61,9 +60,9 @@ func Init(r RedisCli) {
 // `pool` is not necessary, it can be used to classify instances that store same items
 // but it will be more efficient if it is not empty
 func Bind(pool string, caches ...*cache.Cache) error {
-	lock.Lock()
-	cacheMap[pool] = append(cacheMap[pool], caches...)
-	lock.Unlock()
+	c, _ := m.LoadOrStore(pool, &[]*cache.Cache{})
+	unC := c.(*[]*cache.Cache)
+	*unC = append(*unC, caches...)
 	return nil
 }
 
