@@ -1,22 +1,17 @@
 package dist
 
 import (
-	"context"
 	// "sync"
 	"testing"
 	"time"
 
-	"github.com/go-redis/redis"
+	"github.com/go-redis/redis/v8"
 	"github.com/orca-zhang/cache"
-)
-
-var (
-	ctx = context.Background()
-	rdb *redis.Client
+	"github.com/orca-zhang/cache/dist"
 )
 
 func init() {
-	rdb = redis.NewClient(&redis.Options{
+	rdb := redis.NewClient(&redis.Options{
 		Addr:         ":6379",
 		DialTimeout:  10 * time.Second,
 		ReadTimeout:  30 * time.Second,
@@ -24,7 +19,7 @@ func init() {
 		PoolSize:     10,
 		PoolTimeout:  30 * time.Second,
 	})
-	Init(GoRedis(rdb))
+	dist.Init(GoRedis(rdb, 10000))
 }
 
 func TestBind(t *testing.T) {
@@ -38,12 +33,12 @@ func TestBind(t *testing.T) {
 	lc2.Put("3", "1")
 
 	// bind them into a pool
-	Bind("lc", lc1, lc2)
+	dist.Bind("lc", lc1, lc2)
 
 	time.Sleep(3 * time.Second)
 
 	// try to del a item
-	OnDel("lc", "1")
+	dist.OnDel("lc", "1")
 
 	time.Sleep(3 * time.Second)
 
@@ -58,7 +53,7 @@ func TestBind(t *testing.T) {
 /*
 func TestConcurrent(t *testing.T) {
 	lc := cache.NewLRUCache(4, 1, 2*time.Second).LRU2(1)
-	Bind("lc", lc)
+	dist.Bind("lc", lc)
 	var wg sync.WaitGroup
 	for index := 0; index < 1000000; index++ {
 		wg.Add(3)
@@ -71,7 +66,7 @@ func TestConcurrent(t *testing.T) {
 			wg.Done()
 		}()
 		go func() {
-			OnDel("lc", "1")
+			dist.OnDel("lc", "1")
 			wg.Done()
 		}()
 	}
