@@ -240,7 +240,7 @@ func (c *Cache) Get(key string) (v interface{}, b bool) {
 }
 
 // Del - delete item by key from cache
-func (c *Cache) Del(key string) {
+func (c *Cache) Del(key string, mute ...struct{}) {
 	idx := hashCode(key) & c.mask
 	c.locks[idx].Lock()
 	_, b := c.insts[idx][0].del(key)
@@ -249,10 +249,12 @@ func (c *Cache) Del(key string) {
 		b = b || b2
 	}
 	c.locks[idx].Unlock()
-	if b {
-		c.on(DEL, key, 1)
-	} else {
-		c.on(DEL, key, 0)
+	if len(mute) <= 0 {
+		if b {
+			c.on(DEL, key, 1)
+		} else {
+			c.on(DEL, key, 0)
+		}
 	}
 }
 

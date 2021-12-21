@@ -315,7 +315,7 @@ func Test_timeout(t *testing.T) {
 	}
 }
 
-func Test_LRUCache(t *testing.T) {
+func TestLRUCache(t *testing.T) {
 	lc := NewLRUCache(1, 3, 1*time.Second)
 	lc.Put("1", "1")
 	lc.Put("2", "2")
@@ -329,7 +329,7 @@ func Test_LRUCache(t *testing.T) {
 	}
 }
 
-func Test_LRU2Cache(t *testing.T) {
+func TestLRU2Cache(t *testing.T) {
 	lc := NewLRUCache(1, 3, 1*time.Second).LRU2(1)
 	lc.Put("1", "1")
 	lc.Put("2", "2")
@@ -356,7 +356,7 @@ func Test_LRU2Cache(t *testing.T) {
 	}
 }
 
-func Test_concurrent(t *testing.T) {
+func TestConcurrent(t *testing.T) {
 	lc := NewLRUCache(4, 1, 2*time.Second)
 	var wg sync.WaitGroup
 	for index := 0; index < 1000000; index++ {
@@ -377,7 +377,7 @@ func Test_concurrent(t *testing.T) {
 	wg.Wait()
 }
 
-func Test_concurrentLRU2(t *testing.T) {
+func TestConcurrentLRU2(t *testing.T) {
 	lc := NewLRUCache(4, 1, 2*time.Second).LRU2(1)
 	var wg sync.WaitGroup
 	for index := 0; index < 1000000; index++ {
