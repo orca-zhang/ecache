@@ -169,15 +169,13 @@ var _ = dist.Bind("token", caches...)
 
 #### 绑定redis client（go-redis@v7以下版本）
 > 其他库和v7以上版本的开发中，也可以自行实现dist.RedisCli接口\
-> 绑定成功后，所有Put和Del操作会自动同步到所有同一个池子的实例（所有节点）
 ``` go
 	dist.Init(dist.GoRedis(redisCli)) // redisCli是*redis.RedisClient类型
 ```
 
-#### 也可以主动通知
+#### 主动通知
 ``` go
-	dist.OnDel("user", "uid1") // 通知所有节点、所有实例删除
-	dist.OnPut("user", "uid1") // 通知除了当前节点的所有节点、所有实例删除
+	dist.OnDel("user", "uid1") // 通知所有节点、所有实例删除（包括本机）
 ```
 
 # 不希望你白来
