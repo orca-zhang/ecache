@@ -12,8 +12,12 @@
   <a href="https://goreportcard.com/badge/github.com/orca-zhang/cache">
     <img src="https://goreportcard.com/badge/github.com/orca-zhang/cache">
   </a>
+<a href="https://app.fossa.com/projects/git%2Bgithub.com%2Forca-zhang%2Fcache?ref=badge_shield" alt="FOSSA Status"><img src="https://app.fossa.com/api/projects/git%2Bgithub.com%2Forca-zhang%2Fcache.svg?type=shield"/></a>
 </p>
 <p align="center">Extremely easy, fast, concurrency-safe and support distributed consistency.</p>
+
+
+[![FOSSA Status](https://app.fossa.com/api/projects/git%2Bgithub.com%2Forca-zhang%2Fcache.svg?type=large)](https://app.fossa.com/projects/git%2Bgithub.com%2Forca-zhang%2Fcache?ref=badge_large)
 
 # 特性
 
