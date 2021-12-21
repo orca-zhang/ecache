@@ -4,6 +4,9 @@ agent:
   machine:
     type: e1-standard-2
     os_image: ubuntu2004
+  containers:
+    - name: cache
+      image: 'registry.semaphoreci.com/redis:5.0'
 blocks:
   - name: Test
     task:
@@ -11,9 +14,9 @@ blocks:
         - name: go test
           commands:
             - sem-version go 1.11
-            - "export GO111MODULE=on"
-            - "export GOPATH=~/go"
-            - "export PATH=/home/semaphore/go/bin:$PATH"
+            - export GO111MODULE=on
+            - export GOPATH=~/go
+            - 'export PATH=/home/semaphore/go/bin:$PATH'
             - checkout
             - go get ./...
             - go test ./...
