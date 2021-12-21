@@ -33,6 +33,14 @@
 
 ## 如何使用
 
+- 下载包（预计5秒）
+
+> 非go modules模式：\
+> sh>  ```go get -u github.com/orca-zhang/cache```
+
+> go modules模式：\
+> sh>  ```go mod tidy && go mod download```
+
 - 引入包（预计5秒）
 ``` go
 import (
@@ -66,14 +74,6 @@ if v, ok := c.Get("uid1"); ok {
 ``` go
 c.Del("uid1")
 ```
-
-- 下载包（预计5秒）
-
-> 非go modules模式：\
-> sh>  ```go get -u github.com/orca-zhang/cache```
-
-> go modules模式：\
-> sh>  ```go mod tidy && go mod download```
 
 - 运行吧
 > 🎉 完美搞定 🚀 性能直接提升X倍！\
