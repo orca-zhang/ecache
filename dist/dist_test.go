@@ -2,7 +2,6 @@ package dist
 
 import (
 	"context"
-	"sync"
 	"testing"
 	"time"
 
@@ -24,11 +23,10 @@ func init() {
 		PoolSize:     10,
 		PoolTimeout:  30 * time.Second,
 	})
+	Init(GoRedis(rdb))
 }
 
 func TestBind(t *testing.T) {
-	Init(GoRedis(rdb))
-
 	lc1 := cache.NewLRUCache(1, 100, 10*time.Second)
 	lc2 := cache.NewLRUCache(1, 100, 10*time.Second)
 	lc1.Put("1", "1")
@@ -77,26 +75,4 @@ func TestBind(t *testing.T) {
 	if _, ok := lc2.Get("3"); ok {
 		t.Error("case 1 failed")
 	}
-}
-
-func TestConcurrent(t *testing.T) {
-	lc := cache.NewLRUCache(4, 1, 2*time.Second).LRU2(1)
-	Bind("lc", lc)
-	var wg sync.WaitGroup
-	for index := 0; index < 1000000; index++ {
-		wg.Add(3)
-		go func() {
-			lc.Put("1", "2")
-			wg.Done()
-		}()
-		go func() {
-			lc.Get("1")
-			wg.Done()
-		}()
-		go func() {
-			lc.Del("1")
-			wg.Done()
-		}()
-	}
-	wg.Wait()
 }
