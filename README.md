@@ -168,14 +168,15 @@ var _ = dist.Bind("token", caches...)
 ```
 
 #### 绑定redis client（go-redis@v7以下版本）
-> 其他库和v7以上版本的开发中，也可以自行实现dist.RedisCli接口\
+> 其他库和v7以上版本的开发中，也可以自行实现dist.RedisCli接口
 ``` go
-	dist.Init(dist.GoRedis(redisCli)) // redisCli是*redis.RedisClient类型
+dist.Init(dist.GoRedis(redisCli)) // redisCli是*redis.RedisClient类型
 ```
 
 #### 主动通知
 ``` go
-	dist.OnDel("user", "uid1") // 通知所有节点、所有实例删除（包括本机）
+// 当db的数据发生变化或者删除时
+dist.OnDel("user", "uid1") // 通知所有节点、所有实例删除（包括本机），未初始化或者网络错误会降级成只处理本机所有实例
 ```
 
 # 不希望你白来
