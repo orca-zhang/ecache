@@ -33,7 +33,7 @@
 
 ## 如何使用
 
-- 下载包（预计5秒）
+#### 下载包（预计5秒）
 
 > 非go modules模式：\
 > sh>  ```go get -u github.com/orca-zhang/cache```
@@ -41,7 +41,7 @@
 > go modules模式：\
 > sh>  ```go mod tidy && go mod download```
 
-- 引入包（预计5秒）
+#### 引入包（预计5秒）
 ``` go
 import (
     "time"
@@ -50,18 +50,18 @@ import (
 )
 ```
 
-- 定义实例（预计5秒）
+#### 定义实例（预计5秒）
 > 可以放置在任意位置（全局也可以），建议就近定义
 ``` go
 var c = cache.NewLRUCache(16, 200, 10 * time.Second)
 ```
 
-- 设置缓存（预计5秒）
+#### 设置缓存（预计5秒）
 ``` go
 c.Put("uid1", o) // o可以是任意变量，一般是对象指针，存放固定的信息，比如*UserInfo
 ```
 
-- 查询缓存（预计5秒）
+#### 查询缓存（预计5秒）
 ``` go
 if v, ok := c.Get("uid1"); ok {
     return v.(*UserInfo) // 不用类型断言，咱们自己控制类型
@@ -69,13 +69,13 @@ if v, ok := c.Get("uid1"); ok {
 // 如果内存缓存没有查询到，下面再回源查redis/db
 ```
 
-- 删除缓存（预计5秒）
+#### 删除缓存（预计5秒）
 > 在信息发生变化的地方
 ``` go
 c.Del("uid1")
 ```
 
-- 运行吧
+#### 运行吧
 > 🎉 完美搞定 🚀 性能直接提升X倍！\
 > sh>  ```go run <你的main.go文件>```
 
@@ -100,7 +100,7 @@ c.Del("uid1")
 
 ## 特别场景
 
-- 空缓存哨兵（不存在的对象不用再回源）
+#### 空缓存哨兵（不存在的对象不用再回源）
 ``` go
 // 设置的时候直接给`nil`就好
 c.Put("uid1", nil)
@@ -117,7 +117,7 @@ if v, ok := c.Get("uid1"); ok {
 // 如果内存缓存没有查询到，下面再回源查redis/db
 ```
 
-- LFU模式（[什么是LFU](#什么是LFU)）
+#### LFU模式（[什么是LFU](#什么是LFU)）
 > 直接在`NewLRUCache()`后面跟`.LFU(<num>)`就好，参数`<num>`代表LFU热队列的item上限个数（每个桶）
 ``` go
 var c = cache.NewLRUCache(16, 200, 10 * time.Second).LFU(1024)
