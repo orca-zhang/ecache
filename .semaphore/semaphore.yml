@@ -4,18 +4,15 @@ agent:
   machine:
     type: e1-standard-2
     os_image: ubuntu1804
-  containers:
-    - name: main
-      image: 'registry.semaphoreci.com/golang:1.14'
-    - name: cache
-      image: 'registry.semaphoreci.com/redis:5.0'
 blocks:
   - name: Test
     task:
       jobs:
         - name: go test
           commands:
-            - export GO111MODULE=off
+            - sudo apt-get install redis-server -y
+            - sem-version go 1.11
+            - export GO111MODULE=on
             - export GOPATH=~/go
             - 'export PATH=/home/semaphore/go/bin:$PATH'
             - checkout
