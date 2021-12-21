@@ -11,6 +11,7 @@ blocks:
         - name: go test
           commands:
             - sudo apt-get install redis-server -y
+            - redis-server &
             - sem-version go 1.11
             - export GO111MODULE=on
             - export GOPATH=~/go
