@@ -2,7 +2,7 @@ package dist
 
 import (
 	"context"
-	"sync"
+	// "sync"
 	"testing"
 	"time"
 
@@ -58,6 +58,7 @@ func TestBind(t *testing.T) {
 	}
 }
 
+/*
 func TestConcurrent(t *testing.T) {
 	lc := cache.NewLRUCache(4, 1, 2*time.Second).LRU2(1)
 	dist.Bind("lc", lc)
@@ -82,4 +83,4 @@ func TestConcurrent(t *testing.T) {
 		}()
 	}
 	wg.Wait()
-}
+}*/
