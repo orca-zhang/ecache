@@ -19,5 +19,6 @@ blocks:
             - checkout
             - go get ./...
             - go build -v .
+            - sem-version go 1.14
             - go test -coverprofile=coverage.txt -covermode=atomic -v ./...
             - 'bash <(curl -s https://codecov.io/bash) -t 08147e5d-b7a3-4d7a-9bee-ae4cedb39293 || echo "Codecov did not collect coverage reports"'
