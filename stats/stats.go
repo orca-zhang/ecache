@@ -22,7 +22,7 @@ func Bind(pool string, caches ...*cache.Cache) error {
 	for _, c := range caches {
 		c.Inspect(func(action int, _ string, ok int) {
 			// very, very, very low-cost for stats
-			atomic.AddUint64((*uint64)(unsafe.Pointer(uintptr(unsafe.Pointer(v.(*StatsNode)))+uintptr((action-1)*2+ok+1)*unsafe.Sizeof(&ok))), 1)
+			atomic.AddUint64((*uint64)(unsafe.Pointer(uintptr(unsafe.Pointer(v.(*StatsNode)))+uintptr(ok+action*2-1)*unsafe.Sizeof(&ok))), 1)
 		})
 	}
 	return nil
