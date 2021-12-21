@@ -6,7 +6,7 @@ agent:
     os_image: ubuntu1804
   containers:
     - name: main
-      image: 'registry.semaphoreci.com/golang:1.14'
+      image: 'registry.semaphoreci.com/golang:1.11'
     - name: cache
       image: 'registry.semaphoreci.com/redis:5.0'
 blocks:
