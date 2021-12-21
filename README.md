@@ -143,10 +143,10 @@ var _ = stats.Bind("room", caches...)
 
 #### 打印统计信息
 ``` go
-	stats.Stats().Range(func(k, v interface{}) bool {
-		fmt.Printf("stats: %s %+v\n", k, v)
-		return true
-	})
+stats.Stats().Range(func(k, v interface{}) bool {
+    fmt.Printf("stats: %s %+v\n", k, v)
+    return true
+})
 ```
 
 ## 分布式一致性组件
@@ -176,7 +176,9 @@ dist.Init(dist.GoRedis(redisCli)) // redisCli是*redis.RedisClient类型
 #### 主动通知
 ``` go
 // 当db的数据发生变化或者删除时
-dist.OnDel("user", "uid1") // 通知所有节点、所有实例删除（包括本机），未初始化或者网络错误会降级成只处理本机所有实例
+// 通知所有节点、所有实例删除（包括本机）
+// 未初始化或者网络错误会降级成只处理本机所有实例
+dist.OnDel("user", "uid1")
 ```
 
 # 不希望你白来
