@@ -48,7 +48,7 @@ func Init(r RedisCli) {
 			}
 			_ = r.Sub(topic, func(payload string) {
 				vs := strings.Split(payload, ":")
-				if len(vs) >= 1 {
+				if len(vs) >= 2 {
 					delAll(vs[0], vs[1])
 				}
 			})
