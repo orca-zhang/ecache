@@ -356,22 +356,21 @@ func Test_LRU2Cache(t *testing.T) {
 	}
 }
 
-var lcx = NewLRUCache(4, 1, 2*time.Second)
-
 func Test_concurrent(t *testing.T) {
+	lc := NewLRUCache(4, 1, 2*time.Second)
 	var wg sync.WaitGroup
 	for index := 0; index < 1000000; index++ {
 		wg.Add(3)
 		go func() {
-			lcx.Put("1", "2")
+			lc.Put("1", "2")
 			wg.Done()
 		}()
 		go func() {
-			lcx.Get("1")
+			lc.Get("1")
 			wg.Done()
 		}()
 		go func() {
-			lcx.Del("1")
+			lc.Del("1")
 			wg.Done()
 		}()
 	}
