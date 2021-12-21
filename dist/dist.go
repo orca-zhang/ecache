@@ -25,6 +25,14 @@ var redisCli RedisCli
 var lock = &sync.Mutex{}
 var cacheMap = make(map[string][]*cache.Cache, 0)
 
+func delAll(pool, key string) {
+	lock.Lock()
+	for _, c := range cacheMap[pool] {
+		c.Del(key)
+	}
+	lock.Unlock()
+}
+
 func Init(r RedisCli) {
 	redisCli = r
 	go func() {
@@ -42,11 +50,7 @@ func Init(r RedisCli) {
 			_ = r.Sub(topic, func(payload string) {
 				vs := strings.Split(payload, ":")
 				if len(vs) >= 1 {
-					lock.Lock()
-					for _, c := range cacheMap[vs[0]] {
-						c.Del(vs[1])
-					}
-					lock.Unlock()
+					delAll(vs[0], vs[1])
 				}
 			})
 		}
@@ -64,11 +68,12 @@ func Bind(pool string, caches ...*cache.Cache) error {
 }
 
 // OnDel - delete `key` in `pool` at distributed scale
-func OnDel(pool string, key string) error {
+func OnDel(pool, key string) error {
 	// pub to remote nodes
 	r := redisCli
-	if r != nil {
-		_ = r.Pub(topic, strings.Join([]string{pool, key}, ":"))
+	if r != nil && r.Pub(topic, strings.Join([]string{pool, key}, ":")) == nil {
+		return nil
 	}
+	delAll(pool, key)
 	return nil
 }
