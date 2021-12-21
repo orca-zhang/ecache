@@ -6,13 +6,16 @@
 </p>
 
 <p align="center">
-  <a href="https://github.com/orca-zhang/cache/blob/master/LICENSE">
+  <a href="https://github.com/orca-zhang/cache/blob/master/LICENSE" alt="license MIT">
     <img src="https://img.shields.io/badge/license-MIT-brightgreen.svg?style=flat">
   </a>
-  <a href="https://goreportcard.com/badge/github.com/orca-zhang/cache">
+  <a href="https://goreportcard.com/badge/github.com/orca-zhang/cache" alt="goreport A+">
     <img src="https://goreportcard.com/badge/github.com/orca-zhang/cache">
   </a>
-  <a href="https://orca-zhang.semaphoreci.com/projects/cache">
+  <a href="https://app.fossa.com/projects/git%2Bgithub.com%2Forca-zhang%2Fcache?ref=badge_shield" alt="FOSSA Status">
+    <img src="https://app.fossa.com/api/projects/git%2Bgithub.com%2Forca-zhang%2Fcache.svg?type=shield"/>
+  </a>
+  <a href="https://orca-zhang.semaphoreci.com/projects/cache" alt="buiding pass">
     <img src="https://orca-zhang.semaphoreci.com/badges/cache.svg?style=shields">
   </a>
 </p>
