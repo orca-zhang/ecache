@@ -79,10 +79,9 @@ func TestBind(t *testing.T) {
 	}
 }
 
-var lc = cache.NewLRUCache(4, 1, 2*time.Second).LRU2(1)
-var _ = Bind("lc", lc)
-
-func Test_concurrent(t *testing.T) {
+func TestConcurrent(t *testing.T) {
+	lc := cache.NewLRUCache(4, 1, 2*time.Second).LRU2(1)
+	Bind("lc", lc)
 	var wg sync.WaitGroup
 	for index := 0; index < 1000000; index++ {
 		wg.Add(3)
