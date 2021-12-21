@@ -3,8 +3,10 @@ name: Go
 agent:
   machine:
     type: e1-standard-2
-    os_image: ubuntu2004
+    os_image: ubuntu1804
   containers:
+    - name: main
+      image: 'registry.semaphoreci.com/ruby:2.6'
     - name: cache
       image: 'registry.semaphoreci.com/redis:5.0'
 blocks:
