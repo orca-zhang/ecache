@@ -2,6 +2,7 @@ package dist
 
 import (
 	"context"
+	"sync"
 	"testing"
 	"time"
 
@@ -52,27 +53,26 @@ func TestBind(t *testing.T) {
 	if _, ok := lc2.Get("1"); ok {
 		t.Error("case 1 failed")
 	}
+}
 
-	// try to del a item for other nodes
-	OnDel("lc", "2", true)
-
-	time.Sleep(3 * time.Second)
-
-	if _, ok := lc1.Get("2"); !ok {
-		t.Error("case 1 failed")
+func TestConcurrent(t *testing.T) {
+	lc := cache.NewLRUCache(4, 1, 2*time.Second).LRU2(1)
+	Bind("lc", lc)
+	var wg sync.WaitGroup
+	for index := 0; index < 1000000; index++ {
+		wg.Add(3)
+		go func() {
+			lc.Put("1", "2")
+			wg.Done()
+		}()
+		go func() {
+			lc.Get("1")
+			wg.Done()
+		}()
+		go func() {
+			OnDel("lc", "1")
+			wg.Done()
+		}()
 	}
-	if _, ok := lc2.Get("2"); !ok {
-		t.Error("case 1 failed")
-	}
-
-	lc1.Del("3")
-
-	time.Sleep(3 * time.Second)
-
-	if _, ok := lc1.Get("3"); ok {
-		t.Error("case 1 failed")
-	}
-	if _, ok := lc2.Get("3"); ok {
-		t.Error("case 1 failed")
-	}
+	wg.Wait()
 }
