@@ -12,6 +12,9 @@
   <a href="https://goreportcard.com/badge/github.com/orca-zhang/cache">
     <img src="https://goreportcard.com/badge/github.com/orca-zhang/cache">
   </a>
+  <a href="https://orca-zhang.semaphoreci.com/projects/cache">
+    <img src="https://orca-zhang.semaphoreci.com/badges/cache.svg?style=shields">
+  </a>
 </p>
 <p align="center">Extremely easy, fast, concurrency-safe and support distributed consistency.</p>
 
