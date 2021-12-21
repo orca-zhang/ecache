@@ -25,7 +25,7 @@ func (g *GoRedisCli) Pub(channel, key string) error {
 
 // sub a key from channel, callback uill tidy the local cache
 func (g *GoRedisCli) Sub(channel string, callback func(payload string)) error {
-	msgChan := g.redisCli.Subscribe(topic).Channel()
+	msgChan := g.redisCli.Subscribe(topic).ChannelSize(100000)
 
 	for {
 		msg, ok := <-msgChan
