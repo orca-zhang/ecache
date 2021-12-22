@@ -6,8 +6,8 @@
 </p>
 
 <p align="center">
-  <a href="https://github.com/orca-zhang/cache/blob/master/LICENSE" alt="license MIT">
-    <img src="https://img.shields.io/badge/license-MIT-brightgreen.svg?style=flat">
+  <a href="/go.mod#L3" alt="go version">
+    <img src="https://img.shields.io/badge/go%20version-%3E=1.11-brightgreen?style=flat"/>
   </a>
   <a href="https://goreportcard.com/badge/github.com/orca-zhang/cache" alt="goreport">
     <img src="https://goreportcard.com/badge/github.com/orca-zhang/cache">
@@ -18,8 +18,14 @@
   <a href="https://codecov.io/gh/orca-zhang/cache" alt="codecov">
     <img src="https://codecov.io/gh/orca-zhang/cache/branch/master/graph/badge.svg?token=F6LQbADKkq"/>
   </a>
+  <a href="https://github.com/orca-zhang/cache/blob/master/LICENSE" alt="license MIT">
+    <img src="https://img.shields.io/badge/license-MIT-brightgreen.svg?style=flat">
+  </a>
   <a href="https://app.fossa.com/projects/git%2Bgithub.com%2Forca-zhang%2Fcache?ref=badge_shield" alt="FOSSA Status">
     <img src="https://app.fossa.com/api/projects/git%2Bgithub.com%2Forca-zhang%2Fcache.svg?type=shield"/>
+  </a>
+  <a href="#" alt="platform">
+    <img src="https://img.shields.io/badge/platform-linux%20%7C%20win%20%7C%20osx-brightgreen"/>
   </a>
 </p>
 <p align="center">Extremely easy, fast, concurrency-safe and support distributed consistency.</p>
@@ -28,8 +34,8 @@
 
 - ✅ 代码量<300行、30s完成接入
 - 🚀 高性能、极简设计、并发安全
-- 🎉 同时支持`LRU` 和 `LRU-2`模式
-- 🦖 额外小组件支持分布式一致性
+- 🎉 同时支持`LRU` 和 [`LRU-2`模式](LRU-2模式)
+- 🦖 额外[小组件](#分布式一致性组件)支持分布式一致性
 
 ## 如何使用
 
@@ -191,6 +197,7 @@ dist.Init(goredis.Take(redisCli, 100000)) // 第二个参数是channel缓冲区�
 ```
 
 #### redigo
+> `gomodule/redigo` 要求最低版本 `go 1.14`
 ``` go
 import (
     "github.com/orca-zhang/cache/dist/redigo"
