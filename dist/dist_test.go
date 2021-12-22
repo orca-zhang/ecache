@@ -129,7 +129,6 @@ func (d *PanicCli) Pub(channel, payload string) error {
 // sub a payload from channel, callback uill tidy the local cache
 func (d *PanicCli) Sub(channel string, callback func(payload string)) error {
 	panic("test panic client")
-	return nil
 }
 
 func TestPanicClient(t *testing.T) {

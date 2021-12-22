@@ -36,11 +36,11 @@ func (g *RedigoCli) Sub(channel string, callback func(payload string)) error {
 	_ = psc.Subscribe(channel)
 
 	for {
-		switch n := psc.Receive().(type) {
+		switch msg := psc.Receive().(type) {
 		case error:
-			continue
+			return msg
 		case redis.Message:
-			callback(string(n.Data))
+			callback(string(msg.Data))
 		}
 	}
 }

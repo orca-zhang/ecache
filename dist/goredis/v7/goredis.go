@@ -26,13 +26,15 @@ func (g *GoRedisCli) Pub(channel, payload string) error {
 func (g *GoRedisCli) Sub(channel string, callback func(payload string)) error {
 	msgChan := g.redisCli.Subscribe(channel).ChannelSize(g.chanSize)
 	for {
-		if msg, _ := <-msgChan; msg != nil {
+		select {
+		case msg, ok := <-msgChan:
+			if !ok {
+				return nil
+			}
 			callback(msg.Payload)
-		} else {
-			break
+		default:
 		}
 	}
-	return nil
 }
 
 func Take(r *redis.Client, size ...int) dist.RedisCli {
