@@ -19,7 +19,7 @@ func init() {
 		PoolSize:     10,
 		PoolTimeout:  30 * time.Second,
 	})
-	dist.Init(GoRedis(rdb, 10000))
+	dist.Init(Take(rdb, 10000))
 }
 
 func TestBind(t *testing.T) {

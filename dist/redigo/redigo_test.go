@@ -21,7 +21,7 @@ func init() {
 			return c, nil
 		},
 	}
-	dist.Init(Redigo(pool))
+	dist.Init(Take(pool))
 }
 
 func TestBind(t *testing.T) {

@@ -35,7 +35,7 @@ func (g *GoRedisCli) Sub(channel string, callback func(payload string)) error {
 	return nil
 }
 
-func GoRedis(r *redis.Client, size ...int) dist.RedisCli {
+func Take(r *redis.Client, size ...int) dist.RedisCli {
 	s := 100 // default 100 messages
 	if len(size) > 0 {
 		s = size[0]

@@ -45,6 +45,6 @@ func (g *RedigoCli) Sub(channel string, callback func(payload string)) error {
 	}
 }
 
-func Redigo(r *redis.Pool) dist.RedisCli {
+func Take(r *redis.Pool) dist.RedisCli {
 	return &RedigoCli{p: r}
 }
