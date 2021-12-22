@@ -10,8 +10,10 @@ import (
 	"github.com/orca-zhang/cache/dist"
 )
 
+var rdb *redis.Client
+
 func init() {
-	rdb := redis.NewClient(&redis.Options{
+	rdb = redis.NewClient(&redis.Options{
 		Addr:         ":6379",
 		DialTimeout:  10 * time.Second,
 		ReadTimeout:  30 * time.Second,
@@ -19,10 +21,10 @@ func init() {
 		PoolSize:     10,
 		PoolTimeout:  30 * time.Second,
 	})
-	dist.Init(Take(rdb, 10000))
 }
 
 func TestBind(t *testing.T) {
+	dist.Init(Take(rdb, 10000))
 	lc1 := cache.NewLRUCache(1, 100, 10*time.Second)
 	lc2 := cache.NewLRUCache(1, 100, 10*time.Second)
 	lc1.Put("1", "1")
@@ -48,6 +50,13 @@ func TestBind(t *testing.T) {
 	if _, ok := lc2.Get("1"); ok {
 		t.Error("case 1 failed")
 	}
+}
+
+func TestDisconnect(t *testing.T) {
+	dist.Init(Take(rdb, 10000))
+	rdb.Close()
+
+	time.Sleep(5 * time.Second)
 }
 
 /*

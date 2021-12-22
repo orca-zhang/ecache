@@ -33,27 +33,29 @@ func delAll(pool, key string) {
 }
 
 func Init(r RedisCli) {
-	redisCli = r
-	go func() {
-		defer func() {
-			if err := recover(); err != nil {
-				log.Println(err)
-				debug.PrintStack()
+	if redisCli != r {
+		redisCli = r
+		go func() {
+			defer func() {
+				if err := recover(); err != nil {
+					log.Println(err)
+					debug.PrintStack()
+				}
+			}()
+
+			for {
+				for r == nil || !r.OK() {
+					time.Sleep(10 * time.Millisecond)
+				}
+				_ = r.Sub(topic, func(payload string) {
+					vs := strings.Split(payload, ":")
+					if len(vs) >= 2 {
+						delAll(vs[0], vs[1])
+					}
+				})
 			}
 		}()
-
-		for {
-			for r == nil || !r.OK() {
-				time.Sleep(10 * time.Millisecond)
-			}
-			_ = r.Sub(topic, func(payload string) {
-				vs := strings.Split(payload, ":")
-				if len(vs) >= 2 {
-					delAll(vs[0], vs[1])
-				}
-			})
-		}
-	}()
+	}
 }
 
 // Bind - to enable distributed consistency
