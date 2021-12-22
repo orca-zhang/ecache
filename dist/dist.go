@@ -15,9 +15,9 @@ const topic = "orca-zhang/cache"
 type RedisCli interface {
 	// if the redis client is ready
 	OK() bool
-	// pub a key to channel
-	Pub(channel, key string) error
-	// sub a key from channel, callback uill tidy the local cache
+	// pub a payload to channel
+	Pub(channel, payload string) error
+	// sub a payload from channel, callback uill tidy the local cache
 	Sub(channel string, callback func(payload string)) error
 }
 

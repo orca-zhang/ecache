@@ -19,13 +19,13 @@ func (g *GoRedisCli) OK() bool {
 	return err == nil
 }
 
-// pub a key to channel
-func (g *GoRedisCli) Pub(channel, key string) error {
-	_, err := g.redisCli.Publish(g.ctx, channel, key).Result()
+// pub a payload to channel
+func (g *GoRedisCli) Pub(channel, payload string) error {
+	_, err := g.redisCli.Publish(g.ctx, channel, payload).Result()
 	return err
 }
 
-// sub a key from channel, callback uill tidy the local cache
+// sub a payload from channel, callback uill tidy the local cache
 func (g *GoRedisCli) Sub(channel string, callback func(payload string)) error {
 	msgChan := g.redisCli.Subscribe(g.ctx, channel).ChannelSize(g.chanSize)
 	for {
