@@ -254,6 +254,10 @@ func Test_foreach(t *testing.T) {
 			return true
 		})
 
+	if e != nil {
+		t.Error("case 1.3 failed: ", e.Value)
+	}
+
 	e = l.Front()
 	c.foreach(
 		func(key string, val interface{}) bool {
@@ -266,10 +270,6 @@ func Test_foreach(t *testing.T) {
 			}
 			return false
 		})
-
-	if e != nil {
-		t.Error("case 1.3 failed: ", e.Value)
-	}
 }
 
 func TestHashCode(t *testing.T) {
