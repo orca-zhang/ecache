@@ -33,9 +33,7 @@ func (g *RedigoCli) Sub(channel string, callback func(payload string)) error {
 	defer conn.Close()
 
 	psc := redis.PubSubConn{Conn: conn}
-	if err := psc.Subscribe(channel); err != nil {
-		return err
-	}
+	_ = psc.Subscribe(channel)
 
 	for {
 		switch n := psc.Receive().(type) {
@@ -48,10 +46,5 @@ func (g *RedigoCli) Sub(channel string, callback func(payload string)) error {
 }
 
 func Redigo(r *redis.Pool) dist.RedisCli {
-	if r == nil {
-		return nil
-	}
-	return &RedigoCli{
-		p: r,
-	}
+	return &RedigoCli{p: r}
 }

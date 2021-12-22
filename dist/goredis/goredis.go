@@ -28,24 +28,17 @@ func (g *GoRedisCli) Pub(channel, key string) error {
 // sub a key from channel, callback uill tidy the local cache
 func (g *GoRedisCli) Sub(channel string, callback func(payload string)) error {
 	msgChan := g.redisCli.Subscribe(g.ctx, channel).ChannelSize(g.chanSize)
-
 	for {
-		msg, ok := <-msgChan
-		if !ok {
-			break
-		}
-
-		if msg != nil {
+		if msg, _ := <-msgChan; msg != nil {
 			callback(msg.Payload)
+		} else {
+			break
 		}
 	}
 	return nil
 }
 
 func GoRedis(r *redis.Client, size ...int) dist.RedisCli {
-	if r == nil {
-		return nil
-	}
 	s := 100 // default 100 messages
 	if len(size) > 0 {
 		s = size[0]
