@@ -2,6 +2,7 @@ package cache
 
 import (
 	"container/list"
+	"fmt"
 	"sync"
 	"testing"
 	"time"
@@ -253,12 +254,25 @@ func Test_foreach(t *testing.T) {
 			return true
 		})
 
+	e = l.Front()
+	c.foreach(
+		func(key string, val interface{}) bool {
+			v := e.Value.(*Elem)
+			if key != v.key {
+				t.Error("case 1.1 failed: ", key, v.key)
+			}
+			if val.(string) != v.val {
+				t.Error("case 1.2 failed: ", val.(string), v.val)
+			}
+			return false
+		})
+
 	if e != nil {
 		t.Error("case 1.3 failed: ", e.Value)
 	}
 }
 
-func Test_hashCode(t *testing.T) {
+func TestHashCode(t *testing.T) {
 	/*if hashCode(-1) != 1 {
 		t.Error("case 1 failed")
 	}
@@ -282,7 +296,7 @@ func Test_hashCode(t *testing.T) {
 	}*/
 }
 
-func Test_nextPowOf2(t *testing.T) {
+func TestNextPowOf2(t *testing.T) {
 	if nextPowOf2(0) != 1 {
 		t.Error("case 1 failed")
 	}
@@ -303,7 +317,7 @@ func Test_nextPowOf2(t *testing.T) {
 	}
 }
 
-func Test_timeout(t *testing.T) {
+func TestTimeout(t *testing.T) {
 	lc := NewLRUCache(2, 1, 100*time.Millisecond)
 	lc.Put("1", "2")
 	if v, ok := lc.Get("1"); !ok || v != "2" {
@@ -396,4 +410,21 @@ func TestConcurrentLRU2(t *testing.T) {
 		}()
 	}
 	wg.Wait()
+}
+
+func TestInspect(t *testing.T) {
+	lc := NewLRUCache(1, 3, 1*time.Second)
+	lc.Inspect(func(action int, key string, ok int) {
+		fmt.Println(action, key, ok)
+	})
+	lc.Put("1", "1")
+	lc.Put("2", "2")
+	lc.Put("3", "3")
+	v, _ := lc.Get("2") // check reuse
+	lc.Put("4", "4")
+	lc.Put("5", "5")
+	lc.Put("6", "6")
+	if v != "2" {
+		t.Error("case 3 failed")
+	}
 }

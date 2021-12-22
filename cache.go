@@ -84,22 +84,9 @@ func (c *cache) foreach(f func(k string, v interface{}) bool) {
 	}
 }
 
-// inplace update
-func (c *cache) update(k string, f func(v *interface{})) {
-	if e, ok := c.hmap[k]; ok {
-		f(&e.v)
-		c._refresh(e)
-	}
-}
-
 // length of lru cache
 func (c *cache) length() int {
 	return len(c.hmap)
-}
-
-// capacity of lru cache
-func (c *cache) capacity() int {
-	return c.cap
 }
 
 func (c *cache) _refresh(e *node) {
