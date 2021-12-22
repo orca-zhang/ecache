@@ -13,7 +13,7 @@ blocks:
             - sudo apt-get install redis-server -y
             - sudo service redis-server start
             - sudo netstat -anpt | grep 6379
-            - sudo cat /etc/redis.conf
+            - sudo cat /etc/redis/redis.conf
             - sem-version go 1.14
             - export GO111MODULE=on
             - export GOPATH=~/go
