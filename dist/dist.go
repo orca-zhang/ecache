@@ -61,8 +61,7 @@ func Init(r RedisCli) {
 // but it will be more efficient if it is not empty
 func Bind(pool string, caches ...*cache.Cache) error {
 	c, _ := m.LoadOrStore(pool, &[]*cache.Cache{})
-	unC := c.(*[]*cache.Cache)
-	*unC = append(*unC, caches...)
+	*(c.(*[]*cache.Cache)) = append(*(c.(*[]*cache.Cache)), caches...)
 	return nil
 }
 
