@@ -1,4 +1,4 @@
-package dist
+package redigo
 
 import (
 	"github.com/gomodule/redigo/redis"

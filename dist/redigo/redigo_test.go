@@ -1,7 +1,6 @@
-package dist
+package redigo
 
 import (
-	"context"
 	// "sync"
 	"testing"
 	"time"
@@ -9,10 +8,6 @@ import (
 	"github.com/gomodule/redigo/redis"
 	"github.com/orca-zhang/cache"
 	"github.com/orca-zhang/cache/dist"
-)
-
-var (
-	ctx = context.Background()
 )
 
 func init() {

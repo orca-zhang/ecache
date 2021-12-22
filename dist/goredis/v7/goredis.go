@@ -1,4 +1,4 @@
-package dist
+package goredis
 
 import (
 	"github.com/go-redis/redis/v7"
