@@ -112,3 +112,28 @@ func TestDIYClient(t *testing.T) {
 		t.Error("case 2 failed")
 	}
 }
+
+type PanicCli struct {
+}
+
+// if the redis client is ready
+func (d *PanicCli) OK() bool {
+	return true
+}
+
+// pub a payload to channel
+func (d *PanicCli) Pub(channel, payload string) error {
+	return nil
+}
+
+// sub a payload from channel, callback uill tidy the local cache
+func (d *PanicCli) Sub(channel string, callback func(payload string)) error {
+	panic("test panic client")
+	return nil
+}
+
+func TestPanicClient(t *testing.T) {
+	Init(&PanicCli{})
+
+	time.Sleep(3 * time.Second)
+}
