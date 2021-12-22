@@ -176,8 +176,8 @@ import (
     "github.com/orca-zhang/cache/dist/goredis/v7"
 )
 
-dist.Init(dist.GoRedis(redisCli)) // redisCli是*redis.RedisClient类型
-dist.Init(dist.GoRedis(redisCli, 100000)) // 第二个参数是channel缓冲区大小，默认100
+dist.Init(goredis.GoRedis(redisCli)) // redisCli是*redis.RedisClient类型
+dist.Init(goredis.GoRedis(redisCli, 100000)) // 第二个参数是channel缓冲区大小，不传默认100
 ```
 
 #### go-redis@v8及以上版本
@@ -186,8 +186,8 @@ import (
     "github.com/orca-zhang/cache/dist/goredis"
 )
 
-dist.Init(dist.GoRedis(redisCli)) // redisCli是*redis.RedisClient类型
-dist.Init(dist.GoRedis(redisCli, 100000)) // 第二个参数是channel缓冲区大小，默认100
+dist.Init(goredis.Take(redisCli)) // redisCli是*redis.RedisClient类型
+dist.Init(goredis.Take(redisCli, 100000)) // 第二个参数是channel缓冲区大小，不传默认100
 ```
 
 #### redigo
@@ -196,7 +196,7 @@ import (
     "github.com/orca-zhang/cache/dist/redigo"
 )
 
-dist.Init(dist.Redigo(pool)) // pool是*redis.Pool类型
+dist.Init(redigo.Take(pool)) // pool是*redis.Pool类型
 ```
 
 #### 主动通知所有节点、所有实例删除（包括本机）
