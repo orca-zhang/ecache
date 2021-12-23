@@ -25,7 +25,7 @@
     <img src="https://app.fossa.com/api/projects/git%2Bgithub.com%2Forca-zhang%2Fcache.svg?type=shield"/>
   </a>
   <a href="https://benchplus.github.io/gocache/dev/bench/" alt="continuous benchmark">
-    <img src="https://github.com/benchplus/gocache/workflows/gocache/badge.svg"/>
+    <img src="https://img.shields.io/badge/benchmark-click--me-brightgreen.svg?style=flat"/>
   </a>
 </p>
 <p align="center">Extremely easy, fast, concurrency-safe and support distributed consistency.</p>
@@ -93,6 +93,7 @@ c.Del("uid1")
   - 第二个参数是每个桶所能容纳的item个数上限
     - 意味着`cache`全部写满的情况下，应该有`第一个参数✖️第二个参数`个item
   - 第三个参数是每个item的过期时间
+    - `cache`使用内部定时器提升性能，默认100ms精度，每秒校准
 
 ## 最佳实践
 
@@ -316,14 +317,22 @@ dist.OnDel("user", "uid1")
 - 选择`LRU-2`实现`LRU-K`（实现简单，近乎没有额外损耗）
 - 没用整块内存（写满后复用以前的内存效果也很好，整块方式尝试过提升不大、但可读性大大降低）
 - 可以直接存指针（不用序列化，如果使用`[]byte`那优势大大降低）
+- 使用内部定时器计时（默认100ms精度，每秒校准，剖析发现time.Now()产生临时对象导致GC耗时增加）
 
-### 关于GC
+#### 失败的优化尝试
+
+- key由string改为reflect.StringHeader，结果：负优化
+- node预分配连续空间，通过游标和freelist决定新申请还是复用：结果：不明显
+- 互斥锁改为读写锁，Get请求也会修改数据，访问违例，即使不改数据，结果：读写混合场景负优化
+- 放弃使用time.Timer而直接用Sleep实现定时器，前者触发不稳定
+
+### 关于GC优化
 
 - 就像我在C++版性能剖析器里提到的[性能优化的几个层次](https://github.com/ez8-co/ezpp#性能优化的几个层次)，单从一个层次考虑性能并不高明
 - 《第三层次》里有一句“没有比不存在的东西性能更快的了”（类似奥卡姆剃刀），能砍掉一定不要想着优化
 - 比如为了减少GC大块分配内存，却提供`[]byte`的值存储，意味着必须序列化、拷贝（虽不在库的性能指标里，人家用还是要算）
 - 如果序列化的部分可以复用用在协议层拼接，能做到`ZeroCopy`，那也无可厚非，而`cache`存储指针直接省了额外的部分
-- 有的库甚至还包了server，感觉忘了初心🤔️🤔️🤔️你的竞品是memcache、redis吗？因为你快就会用？
+- 我想表达的并不是GC优化不重要，而更多应该结合场景，使用者额外损耗也需要考虑，而非宣称gc-free，结果用起来并非那样
 - 我所崇尚的“暴力美学”是极简，缺陷率和代码量成正比，复杂的东西早晚会被淘汰，`KISS`才是王道
 - `cache`一共只有不到300行，千行bug率一定的情况下，它的bug不会多
 
