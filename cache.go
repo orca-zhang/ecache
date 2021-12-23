@@ -10,18 +10,16 @@ func now() int64 {
 	return atomic.LoadInt64(&clock)
 }
 
-var clock int64 = time.Now().UnixNano()
+var clock = time.Now().UnixNano()
 
 func init() {
 	go func() {
-		timer := time.NewTimer(10 * time.Millisecond)
-		calibration := time.NewTimer(10 * time.Second)
-
-		select {
-		case <-timer.C:
-			atomic.AddInt64(&clock, int64(10*time.Millisecond))
-		case <-calibration.C:
-			clock = time.Now().UnixNano()
+		calibration := time.NewTimer(100 * time.Millisecond)
+		for {
+			select {
+			case <-calibration.C:
+				atomic.StoreInt64(&clock, time.Now().UnixNano())
+			}
 		}
 	}()
 }
@@ -67,13 +65,12 @@ func (c *cache) put(k string, v interface{}) int {
 	}
 
 	e := &node{nil, c.head, k, v, now()}
-	c.hmap[k] = e
-	if len(c.hmap) != 1 {
-		c.head.p = e
-	} else {
+	if len(c.hmap) <= 0 {
 		c.tail = e
+	} else {
+		c.head.p = e
 	}
-	c.head = e
+	c.hmap[k], c.head = e, e
 	return 1
 }
 
@@ -146,7 +143,7 @@ func hashCode(s string) (hash int) {
 
 // Cache - concurrent cache structure
 type Cache struct {
-	locks  []sync.RWMutex
+	locks  []sync.Mutex
 	insts  [][2]*cache // level-0 for normal LRU, level-1 for LRU-2
 	mask   int
 	expire time.Duration
@@ -175,7 +172,7 @@ func nextPowOf2(cap int) int {
 // `expire` is expiration that item alive (and we only use lazy eviction here)
 func NewLRUCache(bucketCnt int, capPerBkt int, expire time.Duration) *Cache {
 	size := nextPowOf2(bucketCnt)
-	c := &Cache{make([]sync.RWMutex, size), make([][2]*cache, size), size - 1, expire, func(int, string, int) {}}
+	c := &Cache{make([]sync.Mutex, size), make([][2]*cache, size), size - 1, expire, func(int, string, int) {}}
 	for i := range c.insts {
 		c.insts[i][0] = create(capPerBkt)
 	}
@@ -204,7 +201,7 @@ func (c *Cache) Put(key string, val interface{}) {
 // internal sub function that get item at specific level
 func (c *Cache) get(key string, idx, level int) (*node, bool) {
 	if n, b := c.insts[idx][level].get(key); b {
-		if now()-n.ts > int64(c.expire/time.Nanosecond) {
+		if now()-n.ts > int64(c.expire) {
 			// not necessary to remove the expired item here
 			// removal is also ok that can control the memory usage before the cache is full, but will cause GC thrashing
 			// c.insts[idx][level].del(key)
@@ -219,7 +216,7 @@ func (c *Cache) get(key string, idx, level int) (*node, bool) {
 // if the item is expired, maybe you can also get the former item even if it returns `false`
 func (c *Cache) Get(key string) (v interface{}, b bool) {
 	idx := hashCode(key) & c.mask
-	c.locks[idx].RLock()
+	c.locks[idx].Lock()
 	var n *node
 	if c.insts[idx][1] == nil { // (if LRU-2 mode not support, loss is little)
 		// normal lru mode
@@ -236,11 +233,11 @@ func (c *Cache) Get(key string) (v interface{}, b bool) {
 		}
 	}
 	if !b {
-		c.locks[idx].RUnlock()
+		c.locks[idx].Unlock()
 		c.on(GET, key, 0)
 		return v, false
 	}
-	c.locks[idx].RUnlock()
+	c.locks[idx].Unlock()
 	c.on(GET, key, 1)
 	return n.v, b
 }
