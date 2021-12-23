@@ -308,7 +308,7 @@ func TestTimeout(t *testing.T) {
 	if v, ok := lc.Get("1"); !ok || v != "2" {
 		t.Error("case 1 failed")
 	}
-	time.Sleep(100 * time.Millisecond)
+	time.Sleep(200 * time.Millisecond)
 	if _, ok := lc.Get("1"); ok {
 		t.Error("case 2 failed")
 	}
