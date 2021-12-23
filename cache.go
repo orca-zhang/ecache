@@ -2,14 +2,36 @@ package cache
 
 import (
 	"sync"
+	"sync/atomic"
 	"time"
 )
+
+func now() int64 {
+	return atomic.LoadInt64(&clock)
+}
+
+var clock int64 = time.Now().UnixNano()
+
+func init() {
+	go func() {
+		timer := time.NewTimer(10 * time.Millisecond)
+		calibration := time.NewTimer(10 * time.Second)
+
+		select {
+		case <-timer.C:
+			atomic.AddInt64(&clock, int64(10*time.Millisecond))
+		case <-calibration.C:
+			clock = time.Now().UnixNano()
+		}
+	}()
+}
 
 // node to store cache item
 type node struct {
 	p, n *node
 	k    string
 	v    interface{}
+	ts   int64 // nano timestamp
 }
 
 // a data structure that is efficient to insert/fetch/delete cache items [both O(1) time complexity]
@@ -28,7 +50,7 @@ func create(cap int) *cache {
 // put a cache item into lru cache, if insert return true
 func (c *cache) put(k string, v interface{}) int {
 	if e, ok := c.hmap[k]; ok {
-		e.v = v
+		e.v, e.ts = v, now()
 		c._refresh(e)
 		return 0
 	}
@@ -38,13 +60,13 @@ func (c *cache) put(k string, v interface{}) int {
 	} else if len(c.hmap) >= c.cap {
 		// transfer the tail item as the new item, then refresh
 		delete(c.hmap, c.tail.k)
-		c.tail.k, c.tail.v = k, v // reuse to reduce gc
+		c.tail.k, c.tail.v, c.tail.ts = k, v, now() // reuse to reduce gc
 		c.hmap[k] = c.tail
 		c._refresh(c.tail)
 		return -1
 	}
 
-	e := &node{nil, c.head, k, v}
+	e := &node{nil, c.head, k, v, now()}
 	c.hmap[k] = e
 	if len(c.hmap) != 1 {
 		c.head.p = e
@@ -56,20 +78,20 @@ func (c *cache) put(k string, v interface{}) int {
 }
 
 // get value of key from lru cache with result
-func (c *cache) get(k string) (interface{}, bool) {
+func (c *cache) get(k string) (*node, bool) {
 	if e, ok := c.hmap[k]; ok {
 		c._refresh(e)
-		return e.v, ok
+		return e, ok
 	}
 	return nil, false
 }
 
 // delete item by key from lru cache
-func (c *cache) del(k string) (interface{}, bool) {
+func (c *cache) del(k string) (*node, bool) {
 	if e, ok := c.hmap[k]; ok {
 		delete(c.hmap, k)
 		c._remove(e)
-		return e.v, true
+		return e, true
 	}
 	return nil, false
 }
@@ -124,17 +146,11 @@ func hashCode(s string) (hash int) {
 
 // Cache - concurrent cache structure
 type Cache struct {
-	locks  []sync.Mutex
+	locks  []sync.RWMutex
 	insts  [][2]*cache // level-0 for normal LRU, level-1 for LRU-2
 	mask   int
 	expire time.Duration
 	on     inspector
-}
-
-// the wrapper is necessary because of node reuse otherwise it's not threadsafe
-type wrapper struct {
-	v  interface{}
-	ts int64 // nano timestamp
 }
 
 func nextPowOf2(cap int) int {
@@ -159,7 +175,7 @@ func nextPowOf2(cap int) int {
 // `expire` is expiration that item alive (and we only use lazy eviction here)
 func NewLRUCache(bucketCnt int, capPerBkt int, expire time.Duration) *Cache {
 	size := nextPowOf2(bucketCnt)
-	c := &Cache{make([]sync.Mutex, size), make([][2]*cache, size), size - 1, expire, func(int, string, int) {}}
+	c := &Cache{make([]sync.RWMutex, size), make([][2]*cache, size), size - 1, expire, func(int, string, int) {}}
 	for i := range c.insts {
 		c.insts[i][0] = create(capPerBkt)
 	}
@@ -180,21 +196,21 @@ func (c *Cache) LRU2(capPerBkt int) *Cache {
 func (c *Cache) Put(key string, val interface{}) {
 	idx := hashCode(key) & c.mask
 	c.locks[idx].Lock()
-	ok := c.insts[idx][0].put(key, &wrapper{val, time.Now().UnixNano()})
+	ok := c.insts[idx][0].put(key, val)
 	c.locks[idx].Unlock()
 	c.on(PUT, key, ok)
 }
 
 // internal sub function that get item at specific level
-func (c *Cache) get(key string, idx, level int) (interface{}, bool) {
-	if v, b := c.insts[idx][level].get(key); b {
-		if time.Since(time.Unix(0, v.(*wrapper).ts)) > c.expire {
+func (c *Cache) get(key string, idx, level int) (*node, bool) {
+	if n, b := c.insts[idx][level].get(key); b {
+		if now()-n.ts > int64(c.expire/time.Nanosecond) {
 			// not necessary to remove the expired item here
 			// removal is also ok that can control the memory usage before the cache is full, but will cause GC thrashing
 			// c.insts[idx][level].del(key)
-			return v, false
+			return n, false
 		}
-		return v, b
+		return n, b
 	}
 	return nil, false
 }
@@ -203,29 +219,30 @@ func (c *Cache) get(key string, idx, level int) (interface{}, bool) {
 // if the item is expired, maybe you can also get the former item even if it returns `false`
 func (c *Cache) Get(key string) (v interface{}, b bool) {
 	idx := hashCode(key) & c.mask
-	c.locks[idx].Lock()
+	c.locks[idx].RLock()
+	var n *node
 	if c.insts[idx][1] == nil { // (if LRU-2 mode not support, loss is little)
 		// normal lru mode
-		v, b = c.get(key, idx, 0)
+		n, b = c.get(key, idx, 0)
 	} else {
 		// LRU-2 mode
-		v, b = c.insts[idx][0].del(key)
+		n, b = c.insts[idx][0].del(key)
 		if !b {
 			// re-find in level-1
-			v, b = c.get(key, idx, 1)
+			n, b = c.get(key, idx, 1)
 		} else {
 			// find in level-0, move to level-1
-			c.insts[idx][1].put(key, v.(*wrapper))
+			c.insts[idx][1].put(key, n.v)
 		}
 	}
 	if !b {
-		c.locks[idx].Unlock()
+		c.locks[idx].RUnlock()
 		c.on(GET, key, 0)
 		return v, false
 	}
-	c.locks[idx].Unlock()
+	c.locks[idx].RUnlock()
 	c.on(GET, key, 1)
-	return v.(*wrapper).v, b
+	return n.v, b
 }
 
 // Del - delete item by key from cache

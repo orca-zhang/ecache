@@ -126,7 +126,7 @@ func Test_get(t *testing.T) {
 	c := create(2)
 	c.put("1", "1")
 	c.put("2", "2")
-	if v, _ := c.get("1"); v != "1" {
+	if v, _ := c.get("1"); v.v != "1" {
 		t.Error("case 1.1 failed")
 	}
 	c.put("3", "3")
