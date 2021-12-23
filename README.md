@@ -24,8 +24,8 @@
   <a href="https://app.fossa.com/projects/git%2Bgithub.com%2Forca-zhang%2Fcache?ref=badge_shield" alt="FOSSA Status">
     <img src="https://app.fossa.com/api/projects/git%2Bgithub.com%2Forca-zhang%2Fcache.svg?type=shield"/>
   </a>
-  <a href="#" alt="platform">
-    <img src="https://img.shields.io/badge/platform-linux%20%7C%20win%20%7C%20osx-brightgreen"/>
+  <a href="https://benchplus.github.io/gocache/dev/bench/" alt="continuous benchmark">
+    <img src="https://github.com/benchplus/gocache/workflows/gocache/badge.svg"/>
   </a>
 </p>
 <p align="center">Extremely easy, fast, concurrency-safe and support distributed consistency.</p>
