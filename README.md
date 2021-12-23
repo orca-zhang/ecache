@@ -39,7 +39,7 @@
 
 ## 基准性能
 
-> [（👁️‍🗨️点我看用例）](https://github.com/benchplus/gocache) [（👁️‍🗨️点我看结果）](https://benchplus.github.io/gocache/dev/bench/)
+[👁️‍🗨️点我看用例](https://github.com/benchplus/gocache) [👁️‍🗨️点我看结果](https://benchplus.github.io/gocache/dev/bench/)
 
 ![](https://github.com/orca-zhang/cache/raw/master/benchmark.png)
 
