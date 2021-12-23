@@ -273,27 +273,12 @@ func Test_foreach(t *testing.T) {
 }
 
 func TestHashCode(t *testing.T) {
-	/*if hashCode(-1) != 1 {
+	if hashCode("12345") != 14543782755 {
 		t.Error("case 1 failed")
 	}
-	if hashCode(0) != 0 {
+	if hashCode("abcdefghijklmnopqrstuvwxyz") != -3937315088871814687 {
 		t.Error("case 2 failed")
 	}
-	if hashCode(0x7FFFFFFF) != 0x7FFFFFFF {
-		t.Error("case 3 failed")
-	}*/
-	if hashCode("12345") != 3421846044 {
-		t.Error("case 4 failed")
-	}
-	if hashCode("abcdefghijklmnopqrstuvwxyz") != 1277644989 {
-		t.Error("case 5 failed")
-	}
-	/*if hashCode(123.45) != 123 {
-		t.Error("case 6 failed")
-	}
-	if hashCode(-15268.45) != 15268 {
-		t.Error("case 7 failed")
-	}*/
 }
 
 func TestNextPowOf2(t *testing.T) {
