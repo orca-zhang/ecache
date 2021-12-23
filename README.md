@@ -352,6 +352,6 @@ dist.OnDel("user", "uid1")
 > 问：为什么不提供int类型的key的接口？
 - 答：考虑过，但是为了分布式一致性处理的简单，只提供string的接口看着也不错，用fmt.Sprint(i)也不麻烦。
 
-### 感谢
+## 感谢
 
 感谢[Ice](https://github.com/IceCream01)、[Danceiny](https://github.com/Danceiny)在开发过程中进行code review、勘误 & 提出宝贵建议（排名不分先后）！
