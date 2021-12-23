@@ -37,6 +37,10 @@
 - 🎉 同时支持`LRU` 和 [`LRU-2`模式](#LRU-2模式)
 - 🦖 额外[小组件](#分布式一致性组件)支持分布式一致性
 
+## 基准性能[（点我）](https://github.com/benchplus/gocache)
+
+![https://benchplus.github.io/gocache/dev/bench/](https://github.com/orca-zhang/cache/raw/master/benchmark.png)
+
 ## 如何使用
 
 #### 下载包（预计5秒）
