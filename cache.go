@@ -1,7 +1,6 @@
 package cache
 
 import (
-	"hash/crc32"
 	"sync"
 	"time"
 )
@@ -115,9 +114,12 @@ func (c *cache) _remove(e *node) {
 	}
 }
 
-// hashCode hashes a string to a unique hashcode.
-func hashCode(s string) int {
-	return int(crc32.ChecksumIEEE([]byte(s)))
+// hashCode hashes a string to a unique hashcode. BKDR hash as default
+func hashCode(s string) (hash int) {
+	for i := 0; i < len(s); i++ {
+		hash = hash*131 + int(s[i])
+	}
+	return hash
 }
 
 // Cache - concurrent cache structure
