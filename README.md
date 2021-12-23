@@ -32,14 +32,16 @@
 
 # 特性
 
-- ✅ 代码量<300行、30s完成接入
+- 🤏 代码量<300行、30s完成接入
 - 🚀 高性能、极简设计、并发安全
-- 🎉 同时支持`LRU` 和 [`LRU-2`模式](#LRU-2模式)
+- 🏳️‍🌈 同时支持`LRU` 和 [`LRU-2`模式](#LRU-2模式)
 - 🦖 额外[小组件](#分布式一致性组件)支持分布式一致性
 
-## 基准性能[（点我）](https://github.com/benchplus/gocache)
+## 基准性能
 
-![https://benchplus.github.io/gocache/dev/bench/](https://github.com/orca-zhang/cache/raw/master/benchmark.png)
+> [（👁️‍🗨️点我看用例）](https://github.com/benchplus/gocache) [（👁️‍🗨️点我看结果）](https://benchplus.github.io/gocache/dev/bench/)
+
+![](https://github.com/orca-zhang/cache/raw/master/benchmark.png)
 
 ## 如何使用
 
