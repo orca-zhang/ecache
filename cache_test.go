@@ -303,12 +303,12 @@ func TestNextPowOf2(t *testing.T) {
 }
 
 func TestTimeout(t *testing.T) {
-	lc := NewLRUCache(2, 1, 100*time.Millisecond)
+	lc := NewLRUCache(2, 1, 1*time.Second)
 	lc.Put("1", "2")
 	if v, ok := lc.Get("1"); !ok || v != "2" {
 		t.Error("case 1 failed")
 	}
-	time.Sleep(200 * time.Millisecond)
+	time.Sleep(2 * time.Second)
 	if _, ok := lc.Get("1"); ok {
 		t.Error("case 2 failed")
 	}

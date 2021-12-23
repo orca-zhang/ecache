@@ -14,9 +14,13 @@ var clock = time.Now().UnixNano()
 
 func init() {
 	go func() {
-		calibration := time.NewTimer(100 * time.Millisecond)
+		sandglass := time.NewTimer(time.Second)
+		calibration := time.NewTimer(10 * time.Second)
+		atomic.StoreInt64(&clock, time.Now().UnixNano())
 		for {
 			select {
+			case <-sandglass.C:
+				atomic.AddInt64(&clock, int64(time.Second))
 			case <-calibration.C:
 				atomic.StoreInt64(&clock, time.Now().UnixNano())
 			}
