@@ -17,6 +17,7 @@ type StatsNode struct {
 
 // Bind - to stats a cache
 // `pool` can be used to classify instances that store same items
+// `caches` is cache instances to be binded
 func Bind(pool string, caches ...*orcache.Cache) error {
 	v, _ := m.LoadOrStore(pool, &StatsNode{})
 	for _, c := range caches {
@@ -33,10 +34,12 @@ func Bind(pool string, caches ...*orcache.Cache) error {
 // `k` is categoy, type is string
 // `v` is node, type is `*stats.StatsNode`
 //
+// ``` go
 // stats.Stats().Range(func(k, v interface{}) bool {
 //     fmt.Println("stats:", k, v)
 //     return true
 // })
+// ```
 func Stats() *sync.Map {
 	return &m
 }

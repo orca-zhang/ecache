@@ -12,6 +12,7 @@ import (
 
 const topic = "orca-zhang/orcache"
 
+// `RedisCli`` interface used by `dist` component
 type RedisCli interface {
 	// if the redis client is ready
 	OK() bool
@@ -32,6 +33,7 @@ func delAll(pool, key string) {
 	}
 }
 
+// Init `dist` component with redis client
 func Init(r RedisCli) {
 	if redisCli != r {
 		redisCli = r
@@ -59,8 +61,8 @@ func Init(r RedisCli) {
 }
 
 // Bind - to enable distributed consistency
-// `pool` is not necessary, it can be used to classify instances that store same items
-// but it will be more efficient if it is not empty
+// `pool` is not necessary, it can be used to classify instances that store same items, but it will be more efficient if it is not empty
+// `caches` is cache instances to be binded
 func Bind(pool string, caches ...*orcache.Cache) error {
 	c, _ := m.LoadOrStore(pool, &[]*orcache.Cache{})
 	*(c.(*[]*orcache.Cache)) = append(*(c.(*[]*orcache.Cache)), caches...)
