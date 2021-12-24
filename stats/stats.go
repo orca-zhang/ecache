@@ -34,12 +34,10 @@ func Bind(pool string, caches ...*orcache.Cache) error {
 // `k` is categoy, type is string
 // `v` is node, type is `*stats.StatsNode`
 //
-// ``` go
-// stats.Stats().Range(func(k, v interface{}) bool {
-//     fmt.Println("stats:", k, v)
-//     return true
-// })
-// ```
+// 	stats.Stats().Range(func(k, v interface{}) bool {
+//     	fmt.Println("stats:", k, v)
+//     	return true
+// 	})
 func Stats() *sync.Map {
 	return &m
 }
