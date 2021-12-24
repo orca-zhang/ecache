@@ -39,10 +39,10 @@
 
 ## 基准性能
 
-> [👁️‍🗨️点我看用例](https://github.com/benchplus/gocache) [👁️‍🗨️点我看结果](https://benchplus.github.io/gocache/dev/bench/)
+> [👁️‍🗨️点我看用例](https://github.com/benchplus/gocache) [👁️‍🗨️点我看结果](https://benchplus.github.io/gocache/dev/bench/) （数值越低越好）
 ![](https://github.com/orca-zhang/orcache/raw/master/doc/benchmark.png)
 
-> gc pause测试结果 [代码由bigcache提供](https://github.com/allegro/bigcache-bench)
+> gc pause测试结果 [代码由bigcache提供](https://github.com/allegro/bigcache-bench)（数值越低越好）
 ![](https://github.com/orca-zhang/orcache/raw/master/doc/gc.png)
 
 ## 如何使用
@@ -109,7 +109,7 @@ c.Del("uid1")
   - 如果需要修改，解决方案：取出字段每个单独赋值，或者用[copier做一次深拷贝后在副本上修改](需要修改部分数据，且用对象指针方式存储时)
 - 也可以存放对象（相对于上一个性能差一些，因为拿出去有拷贝）
 - 缓存的对象尽可能越往业务上层越大越好（节省内存拼装和组织时间）
-- 如果不想因为类似遍历的请求把热数据刷掉，可以改用[`LRU-2`模式](#LRU-2模式)，虽然可能有很少的损耗（💬 [什么是LRU-2](#什么是LRU-2)）
+- 如果不想因为类似遍历的请求把热数据刷掉，可以改用[`LRU-2`模式](#LRU-2模式)，可能有很少的损耗（💬 [什么是LRU-2](#什么是LRU-2)）
 - 一个实例可以存储多种类型的对象，试试key格式化的时候加上前缀，用冒号分割
 - 并发访问量大的场景，试试`256`、`1024`个桶，甚至更多
 
