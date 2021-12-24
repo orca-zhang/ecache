@@ -42,6 +42,7 @@
 [👁️‍🗨️点我看用例](https://github.com/benchplus/gocache) [👁️‍🗨️点我看结果](https://benchplus.github.io/gocache/dev/bench/)
 
 ![](https://github.com/orca-zhang/orcache/raw/master/doc/benchmark.png)
+![](https://github.com/orca-zhang/orcache/raw/master/doc/gc.png)
 
 ## 如何使用
 
