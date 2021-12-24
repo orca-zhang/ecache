@@ -364,5 +364,12 @@ dist.OnDel("user", "uid1")
 
 感谢在开发过程中进行code review、勘误 & 提出宝贵建议的各位！（排名不分先后）
 
-- [Danceiny](https://github.com/Danceiny) 
-- [Ice](https://github.com/IceCream01)
+<table>
+  <tr>
+    <td align="center"><a href="https://github.com/askuy"><img src="https://avatars.githubusercontent.com/u/14119383?v=4" width="64px;" alt=""/><br /><sub><b>askuy</b></sub></a></td>
+    <td align="center"><a href="https://github.com/auula"><img src="https://avatars.githubusercontent.com/u/38412458?v=4" width="64px;" alt=""/><br /><sub><b>Leon Ding</b></sub></a></td>
+    <td align="center"><a href="https://github.com/Danceiny"><img src="https://avatars.githubusercontent.com/u/9427454?v=4" width="64px;" alt=""/><br /><sub><b>
+黄振</b></sub></a></td>
+    <td align="center"><a href="https://github.com/IceCream01"><img src="https://avatars.githubusercontent.com/u/19547638?v=4" width="64px;" alt=""/><br /><sub><b>Ice</b></sub></a></td>
+  </tr>
+</table>
