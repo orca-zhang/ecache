@@ -1,7 +1,7 @@
 # 🦄 {orcache}
 <p align="center">
   <a href="#">
-    <img src="https://github.com/orca-zhang/orcache/raw/master/logo.svg">
+    <img src="https://github.com/orca-zhang/orcache/raw/master/doc/logo.svg">
   </a>
 </p>
 
@@ -41,7 +41,7 @@
 
 [👁️‍🗨️点我看用例](https://github.com/benchplus/gocache) [👁️‍🗨️点我看结果](https://benchplus.github.io/gocache/dev/bench/)
 
-![](https://github.com/orca-zhang/orcache/raw/master/benchmark.png)
+![](https://github.com/orca-zhang/orcache/raw/master/doc/benchmark.png)
 
 ## 如何使用
 
