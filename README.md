@@ -12,8 +12,8 @@
   <a href="https://goreportcard.com/badge/github.com/orca-zhang/orcache" alt="goreport">
     <img src="https://goreportcard.com/badge/github.com/orca-zhang/orcache">
   </a>
-  <a href="https://orca-zhang.semaphoreci.com/projects/cache" alt="buiding status">
-    <img src="https://orca-zhang.semaphoreci.com/badges/cache.svg?style=shields">
+  <a href="https://orca-zhang.semaphoreci.com/projects/orcache" alt="buiding status">
+    <img src="https://orca-zhang.semaphoreci.com/badges/orcache.svg?style=shields">
   </a>
   <a href="https://codecov.io/gh/orca-zhang/orcache" alt="codecov">
     <img src="https://codecov.io/gh/orca-zhang/orcache/branch/master/graph/badge.svg?token=F6LQbADKkq"/>
