@@ -6,8 +6,8 @@ import (
 	"time"
 
 	"github.com/gomodule/redigo/redis"
-	"github.com/orca-zhang/cache"
-	"github.com/orca-zhang/cache/dist"
+	"github.com/orca-zhang/orcache"
+	"github.com/orca-zhang/orcache/dist"
 )
 
 var pool *redis.Pool

@@ -1,7 +1,7 @@
-# 🦄 {cache}
+# 🦄 {orcache}
 <p align="center">
   <a href="#">
-    <img src="https://github.com/orca-zhang/cache/raw/master/logo.svg">
+    <img src="https://github.com/orca-zhang/orcache/raw/master/logo.svg">
   </a>
 </p>
 
@@ -9,16 +9,16 @@
   <a href="/go.mod#L3" alt="go version">
     <img src="https://img.shields.io/badge/go%20version-%3E=1.11-brightgreen?style=flat"/>
   </a>
-  <a href="https://goreportcard.com/badge/github.com/orca-zhang/cache" alt="goreport">
-    <img src="https://goreportcard.com/badge/github.com/orca-zhang/cache">
+  <a href="https://goreportcard.com/badge/github.com/orca-zhang/orcache" alt="goreport">
+    <img src="https://goreportcard.com/badge/github.com/orca-zhang/orcache">
   </a>
   <a href="https://orca-zhang.semaphoreci.com/projects/cache" alt="buiding status">
     <img src="https://orca-zhang.semaphoreci.com/badges/cache.svg?style=shields">
   </a>
-  <a href="https://codecov.io/gh/orca-zhang/cache" alt="codecov">
-    <img src="https://codecov.io/gh/orca-zhang/cache/branch/master/graph/badge.svg?token=F6LQbADKkq"/>
+  <a href="https://codecov.io/gh/orca-zhang/orcache" alt="codecov">
+    <img src="https://codecov.io/gh/orca-zhang/orcache/branch/master/graph/badge.svg?token=F6LQbADKkq"/>
   </a>
-  <a href="https://github.com/orca-zhang/cache/blob/master/LICENSE" alt="license MIT">
+  <a href="https://github.com/orca-zhang/orcache/blob/master/LICENSE" alt="license MIT">
     <img src="https://img.shields.io/badge/license-MIT-brightgreen.svg?style=flat">
   </a>
   <a href="https://app.fossa.com/projects/git%2Bgithub.com%2Forca-zhang%2Fcache?ref=badge_shield" alt="FOSSA Status">
@@ -41,14 +41,14 @@
 
 [👁️‍🗨️点我看用例](https://github.com/benchplus/gocache) [👁️‍🗨️点我看结果](https://benchplus.github.io/gocache/dev/bench/)
 
-![](https://github.com/orca-zhang/cache/raw/master/benchmark.png)
+![](https://github.com/orca-zhang/orcache/raw/master/benchmark.png)
 
 ## 如何使用
 
 #### 下载包（预计5秒）
 
 > 非go modules模式：\
-> sh>  ```go get -u github.com/orca-zhang/cache```
+> sh>  ```go get -u github.com/orca-zhang/orcache```
 
 > go modules模式：\
 > sh>  ```go mod tidy && go mod download```
@@ -58,14 +58,14 @@
 import (
     "time"
 
-    "github.com/orca-zhang/cache"
+    "github.com/orca-zhang/orcache"
 )
 ```
 
 #### 定义实例（预计5秒）
 > 可以放置在任意位置（全局也可以），建议就近定义
 ``` go
-var c = cache.NewLRUCache(16, 200, 10 * time.Second)
+var c = orcache.NewLRUCache(16, 200, 10 * time.Second)
 ```
 
 #### 设置缓存（预计5秒）
@@ -95,11 +95,11 @@ c.Del("uid1")
 
 - `NewLRUCache`
   - 第一个参数是桶的个数，用来分散锁的粒度，每个桶都会使用独立的锁
-    - 不用担心，随意设置一个就好，`cache`会找一个等于或者略大于输入大小的2的幂次的数字，后面便于掩码计算
+    - 不用担心，随意设置一个就好，`orcache`会找一个等于或者略大于输入大小的2的幂次的数字，后面便于掩码计算
   - 第二个参数是每个桶所能容纳的item个数上限
-    - 意味着`cache`全部写满的情况下，应该有`第一个参数✖️第二个参数`个item
+    - 意味着`orcache`全部写满的情况下，应该有`第一个参数✖️第二个参数`个item
   - 第三个参数是每个item的过期时间
-    - `cache`使用内部定时器提升性能，默认100ms精度，每秒校准
+    - `orcache`使用内部定时器提升性能，默认100ms精度，每秒校准
 
 ## 最佳实践
 
@@ -119,7 +119,7 @@ c.Del("uid1")
 
 > 直接在`NewLRUCache()`后面跟`.LRU2(<num>)`就好，参数`<num>`代表`LRU-2`热队列的item上限个数（每个桶）
 ``` go
-var c = cache.NewLRUCache(16, 200, 10 * time.Second).LRU2(1024)
+var c = orcache.NewLRUCache(16, 200, 10 * time.Second).LRU2(1024)
 ```
 
 ### 空缓存哨兵（不存在的对象不用再回源）
@@ -141,7 +141,7 @@ if v, ok := c.Get("uid1"); ok {
 
 ### 需要修改部分数据，且用对象指针方式存储时
 
-> 比如，我们从`cache`中获取了`*UserInfo`类型的用户信息缓存v，需要修改其状态字段
+> 比如，我们从`orcache`中获取了`*UserInfo`类型的用户信息缓存v，需要修改其状态字段
 ``` go
 import (
     "github.com/jinzhu/copier"
@@ -161,7 +161,7 @@ o.Status = 1      // 修改副本的数据
 ##### 引入stats包
 ``` go
 import (
-    "github.com/orca-zhang/cache/stats"
+    "github.com/orca-zhang/orcache/stats"
 )
 ```
 
@@ -187,7 +187,7 @@ stats.Stats().Range(func(k, v interface{}) bool {
 ### 引入dist包
 ``` go
 import (
-    "github.com/orca-zhang/cache/dist"
+    "github.com/orca-zhang/orcache/dist"
 )
 ```
 
@@ -206,7 +206,7 @@ var _ = dist.Bind("token", caches...)
 #### go-redis v7及以下版本
 ``` go
 import (
-    "github.com/orca-zhang/cache/dist/goredis/v7"
+    "github.com/orca-zhang/orcache/dist/goredis/v7"
 )
 
 dist.Init(goredis.Take(redisCli)) // redisCli是*redis.RedisClient类型
@@ -216,7 +216,7 @@ dist.Init(goredis.Take(redisCli, 100000)) // 第二个参数是channel缓冲区�
 #### go-redis v8及以上版本
 ``` go
 import (
-    "github.com/orca-zhang/cache/dist/goredis"
+    "github.com/orca-zhang/orcache/dist/goredis"
 )
 
 dist.Init(goredis.Take(redisCli)) // redisCli是*redis.RedisClient类型
@@ -227,7 +227,7 @@ dist.Init(goredis.Take(redisCli, 100000)) // 第二个参数是channel缓冲区�
 > 注意⚠️`github.com/gomodule/redigo` 要求最低版本 `go 1.14`
 ``` go
 import (
-    "github.com/orca-zhang/cache/dist/redigo"
+    "github.com/orca-zhang/orcache/dist/redigo"
 )
 
 dist.Init(redigo.Take(pool)) // pool是*redis.Pool类型
@@ -243,7 +243,7 @@ dist.OnDel("user", "uid1")
 # 不希望你白来
 
 - 客官，既然来了，学点东西再走吧！
-- 我想尽力让你明白`cache`做了啥，以及为什么要这么做
+- 我想尽力让你明白`orcache`做了啥，以及为什么要这么做
 
 ## 什么是本地内存缓存
 
@@ -280,10 +280,10 @@ dist.OnDel("user", "uid1")
 
 ## 设计思路
 
-> `cache`是[`lrucache`](http://github.com/orca-zhang/lrucache)库的升级版本
+> `orcache`是[`lrucache`](http://github.com/orca-zhang/lrucache)库的升级版本
 
 - 最下层是用原生map和存双链表的```node```实现的最基础`LRU`（最久未访问）
-  - PS：我实现的其他版本（[go](https://github.com/orca-zhang/lrucache) / [C++](https://github.com/ez8-co/linked_hash) / [js](https://github.com/orca-zhang/cache.js)）在leetcode都是超越100%的解法
+  - PS：我实现的其他版本（[go](https://github.com/orca-zhang/lrucache) / [C++](https://github.com/ez8-co/linked_hash) / [js](https://github.com/orca-zhang/orcache.js)）在leetcode都是超越100%的解法
 - 第2层包了分桶策略、并发控制、过期控制（会自动适配等于或者略大于输入大小的2的幂次个桶，便于掩码计算）
 - 第2.5层用很简单的方式实现了`LRU-2`能力，代码不超过20行，直接看源码（搜关键词`LRU-2`）
 
@@ -310,7 +310,7 @@ dist.OnDel("user", "uid1")
     - redis不可用、网络错误
     - 消费goroutine panic
     - 存在未生效节点（灰度`canary`发布，或者发布过程中）的情况下，比如
-      - 已使用`cache`但首次添加此插件
+      - 已使用`orcache`但首次添加此插件
       - 新加入缓存的数据或者新加的删除操作
 
 ### 关于性能
@@ -339,10 +339,10 @@ dist.OnDel("user", "uid1")
 - 就像我在C++版性能剖析器里提到的[性能优化的几个层次](https://github.com/ez8-co/ezpp#性能优化的几个层次)，单从一个层次考虑性能并不高明
 - 《第三层次》里有一句“没有比不存在的东西性能更快的了”（类似奥卡姆剃刀），能砍掉一定不要想着优化
 - 比如为了减少GC大块分配内存，却提供`[]byte`的值存储，意味着必须序列化、拷贝（虽不在库的性能指标里，人家用还是要算，包括：GC、内存、CPU）
-- 如果序列化的部分可以复用用在协议层拼接，能做到`ZeroCopy`，那也无可厚非，而`cache`存储指针直接省了额外的部分
+- 如果序列化的部分可以复用用在协议层拼接，能做到`ZeroCopy`，那也无可厚非，而`orcache`存储指针直接省了额外的部分
 - 我想表达的并不是GC优化不重要，而更多应该结合场景，使用者额外损耗也需要考虑，而非宣称gc-free，结果用起来并非那样
 - 我所崇尚的“暴力美学”是极简，缺陷率和代码量成正比，复杂的东西早晚会被淘汰，`KISS`才是王道
-- `cache`一共只有不到300行，千行bug率一定的情况下，它的bug不会多
+- `orcache`一共只有不到300行，千行bug率一定的情况下，它的bug不会多
 
 ## 常见问题
 > 问：一个实例可以存储多种对象吗？

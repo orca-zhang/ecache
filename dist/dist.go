@@ -7,10 +7,10 @@ import (
 	"sync"
 	"time"
 
-	"github.com/orca-zhang/cache"
+	"github.com/orca-zhang/orcache"
 )
 
-const topic = "orca-zhang/cache"
+const topic = "orca-zhang/orcache"
 
 type RedisCli interface {
 	// if the redis client is ready

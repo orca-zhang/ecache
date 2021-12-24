@@ -6,8 +6,8 @@ import (
 	"time"
 
 	"github.com/go-redis/redis/v7"
-	"github.com/orca-zhang/cache"
-	"github.com/orca-zhang/cache/dist"
+	"github.com/orca-zhang/orcache"
+	"github.com/orca-zhang/orcache/dist"
 )
 
 var rdb *redis.Client

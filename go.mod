@@ -1,6 +1,6 @@
-module github.com/orca-zhang/cache
+module github.com/orca-zhang/orcache
 
-go 1.11
+go 1.14
 
 require (
 	github.com/go-redis/redis/v7 v7.4.1

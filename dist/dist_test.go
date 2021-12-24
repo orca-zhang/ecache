@@ -5,7 +5,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/orca-zhang/cache"
+	"github.com/orca-zhang/orcache"
 )
 
 type DIYCli struct {

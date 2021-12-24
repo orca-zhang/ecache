@@ -5,7 +5,7 @@ import (
 	"sync/atomic"
 	"unsafe"
 
-	"github.com/orca-zhang/cache"
+	"github.com/orca-zhang/orcache"
 )
 
 var m sync.Map
