@@ -25,8 +25,8 @@ func init() {
 
 func TestBind(t *testing.T) {
 	dist.Init(Take(rdb, 10000))
-	lc1 := cache.NewLRUCache(1, 100, 10*time.Second)
-	lc2 := cache.NewLRUCache(1, 100, 10*time.Second)
+	lc1 := orcache.NewLRUCache(1, 100, 10*time.Second)
+	lc2 := orcache.NewLRUCache(1, 100, 10*time.Second)
 	lc1.Put("1", "1")
 	lc2.Put("1", "1")
 	lc1.Put("2", "1")
@@ -61,7 +61,7 @@ func TestDisconnect(t *testing.T) {
 
 /*
 func TestConcurrent(t *testing.T) {
-	lc := cache.NewLRUCache(4, 1, 2*time.Second).LRU2(1)
+	lc := orcache.NewLRUCache(4, 1, 2*time.Second).LRU2(1)
 	dist.Bind("lc", lc)
 	var wg sync.WaitGroup
 	for index := 0; index < 10000; index++ {

@@ -10,7 +10,7 @@ import (
 )
 
 func TestLRU2Cache(t *testing.T) {
-	lc := cache.NewLRUCache(1, 3, 1*time.Second).LRU2(1)
+	lc := orcache.NewLRUCache(1, 3, 1*time.Second).LRU2(1)
 	Bind("lc", lc)
 	lc.Put("1", "1")
 	lc.Put("2", "2")
@@ -45,7 +45,7 @@ func TestLRU2Cache(t *testing.T) {
 }
 
 func TestConcurrent(t *testing.T) {
-	lc := cache.NewLRUCache(4, 1, 2*time.Second).LRU2(1)
+	lc := orcache.NewLRUCache(4, 1, 2*time.Second).LRU2(1)
 	Bind("aaaa", lc)
 	var wg sync.WaitGroup
 	for index := 0; index < 1000000; index++ {
@@ -71,9 +71,9 @@ func TestConcurrent(t *testing.T) {
 }
 
 func TestBindToExistPool(t *testing.T) {
-	lcOld := cache.NewLRUCache(1, 3, 1*time.Second).LRU2(1)
+	lcOld := orcache.NewLRUCache(1, 3, 1*time.Second).LRU2(1)
 	Bind("lc", lcOld)
-	lc := cache.NewLRUCache(1, 3, 1*time.Second).LRU2(1)
+	lc := orcache.NewLRUCache(1, 3, 1*time.Second).LRU2(1)
 	Bind("lc", lc)
 	lc.Put("1", "1")
 	lc.Put("2", "2")

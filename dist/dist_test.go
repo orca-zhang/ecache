@@ -44,8 +44,8 @@ func Take(ok *bool) RedisCli {
 }
 
 func TestBind(t *testing.T) {
-	lc1 := cache.NewLRUCache(1, 100, 10*time.Second)
-	lc2 := cache.NewLRUCache(1, 100, 10*time.Second)
+	lc1 := orcache.NewLRUCache(1, 100, 10*time.Second)
+	lc2 := orcache.NewLRUCache(1, 100, 10*time.Second)
 	lc1.Put("1", "1")
 	lc2.Put("1", "1")
 	lc1.Put("2", "1")
@@ -95,7 +95,7 @@ func TestDIYClient(t *testing.T) {
 
 	time.Sleep(3 * time.Second)
 
-	lc1 := cache.NewLRUCache(1, 100, 10*time.Second)
+	lc1 := orcache.NewLRUCache(1, 100, 10*time.Second)
 	lc1.Put("1", "1")
 
 	if _, ok := lc1.Get("1"); !ok {
