@@ -34,7 +34,7 @@
 
 - 🤏 代码量<300行、30s完成接入
 - 🚀 高性能、极简设计、并发安全
-- 🏳️‍🌈 支持`LRU` 和 [LRU-2](#LRU-2模式)两种模式
+- 🏳️‍🌈 支持`LRU` 和 [`LRU-2`](#LRU-2模式)两种模式
 - 🦖 额外[小组件](#分布式一致性组件)支持分布式一致性
 
 ## 基准性能
@@ -107,7 +107,7 @@ c.Del("uid1")
   - 如果需要修改，解决方案：取出字段每个单独赋值，或者用[copier做一次深拷贝后在副本上修改](需要修改部分数据，且用对象指针方式存储时)
 - 也可以存放对象（相对于上一个性能差一些，因为拿出去有拷贝）
 - 缓存的对象尽可能越往业务上层越大越好（节省内存拼装和组织时间）
-- 如果不想因为类似遍历的请求把热数据刷掉，可以改用[`LRU-2`模式](#LRU-2模式)，虽然有非常少的损耗（💬 [什么是LRU-2](#什么是LRU-2)）
+- 如果不想因为类似遍历的请求把热数据刷掉，可以改用[`LRU-2`模式](#LRU-2模式)，虽然可能有很少的损耗（💬 [什么是LRU-2](#什么是LRU-2)）
 - 一个实例可以存储多种类型的对象，试试key格式化的时候加上前缀，用冒号分割
 - 并发访问量大的场景，试试`256`、`1024`个桶，甚至更多
 
@@ -117,7 +117,7 @@ c.Del("uid1")
 
 - 💬 [什么是LRU-2](#什么是LRU-2)
 
-> 直接在`NewLRUCache()`后面跟`.LRU2(<num>)`就好，参数`<num>`代表LRU2热队列的item上限个数（每个桶）
+> 直接在`NewLRUCache()`后面跟`.LRU2(<num>)`就好，参数`<num>`代表`LRU-2`热队列的item上限个数（每个桶）
 ``` go
 var c = cache.NewLRUCache(16, 200, 10 * time.Second).LRU2(1024)
 ```
@@ -203,7 +203,7 @@ var _ = dist.Bind("token", caches...)
 ### 绑定redis client
 > 目前支持redigo和goredis，其他库可以自行实现dist.RedisCli接口，或者提issue给我
 
-#### go-redis@v7及以下版本
+#### go-redis v7及以下版本
 ``` go
 import (
     "github.com/orca-zhang/cache/dist/goredis/v7"
@@ -213,7 +213,7 @@ dist.Init(goredis.Take(redisCli)) // redisCli是*redis.RedisClient类型
 dist.Init(goredis.Take(redisCli, 100000)) // 第二个参数是channel缓冲区大小，不传默认100
 ```
 
-#### go-redis@v8及以上版本
+#### go-redis v8及以上版本
 ``` go
 import (
     "github.com/orca-zhang/cache/dist/goredis"
@@ -267,10 +267,10 @@ dist.OnDel("user", "uid1")
 ### 使用场景，解决什么问题
 
 - 高并发大流量场景
-  - 缓存热点数据（比如人气最高的直播间）
+  - 缓存热点数据（比如人气比较高的直播间）
   - 突发QPS削峰（比如信息流中突发新闻）
 - 节省成本
-  - 单机场景（不部署redis、memcache也能快速提升qps上限）
+  - 单机场景（不部署redis、memcache也能快速提升QPS上限）
   - redis和db实例降配（能拦截大部分请求）
 - 不怎么会变化的数据（写少读多）
   - 比如配置等（这类数据使用地方多，会有放大效应，很多时候可能会因为这些配置热key对redis实例的规格误判，需要单独为它们升配）
@@ -280,7 +280,7 @@ dist.OnDel("user", "uid1")
 
 ## 设计思路
 
-> 源自[lrucache](http://github.com/orca-zhang/lrucache)，`cache`是其升级版本
+> `cache`是[`lrucache`](http://github.com/orca-zhang/lrucache)库的升级版本
 
 - 最下层是用原生map和存双链表的```node```实现的最基础`LRU`（最久未访问）
   - PS：我实现的其他版本（[go](https://github.com/orca-zhang/lrucache) / [C++](https://github.com/ez8-co/linked_hash) / [js](https://github.com/orca-zhang/cache.js)）在leetcode都是超越100%的解法
@@ -360,6 +360,9 @@ dist.OnDel("user", "uid1")
 > 问：为什么不提供int类型的key的接口？
 - 答：考虑过，但是为了分布式一致性处理的简单，只提供string的接口看着也不错，用fmt.Sprint(i)也不麻烦。
 
-## 感谢
+## Thanks
 
-感谢[Ice](https://github.com/IceCream01)、[Danceiny](https://github.com/Danceiny)在开发过程中进行code review、勘误 & 提出宝贵建议（排名不分先后）！
+感谢在开发过程中进行code review、勘误 & 提出宝贵建议的各位！（排名不分先后）
+
+- [Danceiny](https://github.com/Danceiny) 
+- [Ice](https://github.com/IceCream01)
