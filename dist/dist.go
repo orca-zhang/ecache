@@ -26,7 +26,7 @@ var m sync.Map
 
 func delAll(pool, key string) {
 	if caches, _ := m.Load(pool); caches != nil {
-		for _, c := range *(caches.(*[]*cache.Cache)) {
+		for _, c := range *(caches.(*[]*orcache.Cache)) {
 			c.Del(key)
 		}
 	}
@@ -61,9 +61,9 @@ func Init(r RedisCli) {
 // Bind - to enable distributed consistency
 // `pool` is not necessary, it can be used to classify instances that store same items
 // but it will be more efficient if it is not empty
-func Bind(pool string, caches ...*cache.Cache) error {
-	c, _ := m.LoadOrStore(pool, &[]*cache.Cache{})
-	*(c.(*[]*cache.Cache)) = append(*(c.(*[]*cache.Cache)), caches...)
+func Bind(pool string, caches ...*orcache.Cache) error {
+	c, _ := m.LoadOrStore(pool, &[]*orcache.Cache{})
+	*(c.(*[]*orcache.Cache)) = append(*(c.(*[]*orcache.Cache)), caches...)
 	return nil
 }
 
