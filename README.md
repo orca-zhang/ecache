@@ -42,9 +42,6 @@
 > [👁️‍🗨️点我看用例](https://github.com/benchplus/gocache) [👁️‍🗨️点我看结果](https://benchplus.github.io/gocache/dev/bench/)
 ![](https://github.com/orca-zhang/orcache/raw/master/doc/benchmark.png)
 
-> leetcode结果
-![](https://github.com/orca-zhang/lrucache/raw/master/doc/leetcode.png)
-
 > gc pause测试结果 [代码由bigcache提供](https://github.com/allegro/bigcache-bench)
 ![](https://github.com/orca-zhang/orcache/raw/master/doc/gc.png)
 
