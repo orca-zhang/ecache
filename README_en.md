@@ -245,7 +245,7 @@ dist.Init(redigo.Take(pool)) // pool is of *redis.Pool type
 dist.OnDel("user", "uid1")
 ```
 
-# You won't go home empty-handed
+# You won't leave empty-handed
 
 - Guest officer, let's learn something before leaving!
 - I want to try my best to make you understand what `orcache` did and why.
