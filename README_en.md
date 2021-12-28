@@ -36,8 +36,8 @@
 
 - 🤏  Less than 300 lines, cost only ~30s to assemble
 - 🚀  Extremely easy, ultra fast and  concurrency-safe
-- 🏳️‍🌈  Support both `LRU` mode and  [`LRU-2`](#LRU-2%20mode) mode inside
-- 🦖  [Extra plugin](#Distributed%20Consistency%20Plugin) that support distributed consistency
+- 🏳️‍🌈  Support both `LRU` mode and  [`LRU-2`](#LRU-2-mode) mode inside
+- 🦖  [Extra plugin](#Distributed-Consistency-Plugin) that support distributed consistency
 
 ## Benchmarks
 
@@ -72,9 +72,9 @@ c.Put("uid1", o) // `o` can be any variable, generally an object pointer, storin
 #### Retrive Item (almost 5s)
 ``` go
 if v, ok := c.Get("uid1"); ok {
-    return v.(*UserInfo) // No type assertion, let's control the type ourselves
+    return v.(*UserInfo) // No type assertion, let's control the type by ourselves
 }
-// If the memory cache is not found, go back to query the redis/db
+// If it is not found in memory cache , go back to query the redis/db
 ```
 
 #### Remove Item (almost 5s)
@@ -108,10 +108,10 @@ c.Del("uid1")
 ## Best Practices
 
 - Store pointers for complex objects (note that ⚠️ do not modify its fields once it is put in, even if it is taken out again, because the item may be accessed by other people at the same time)
-   - If you need to modify, the solution: take out each individual assignment of the field, or use [copier to make a deep copy and modify on the copy](#Need%20to%20modify,%20and%20store%20the%20object%20pointer)
+   - If you need to modify, the solution: take out each individual assignment of the field, or use [copier to make a deep copy and modify on the copy](#Need-to-modify,-and-store-the-object-pointer)
 - Objects can also be stored directly (compared to the previous one, the performance is worse because there are copy operations when taken out)
 - The larger cached objects, the better, the upper level of the business, the better (save memory assembly and data organization time)
-- If you don’t want to erase the hot data due to traversal requests, you can switch to [`LRU-2` mode](#LRU-2%20mode), there may be very little loss (💬 [What Is LRU-2](#What%20Is%20LRU-2))
+- If you don’t want to erase the hot data due to traversal requests, you can switch to [`LRU-2` mode](#LRU-2-mode), there may be very little loss (💬 [What Is LRU-2](#What-Is-LRU-2))
 - One instance can store multiple types of objects, try adding a prefix when formatting the key and separating it with a colon
 - For scenes with large concurrent visits, try `256`, `1024` buckets, or even more
 
@@ -119,7 +119,7 @@ c.Del("uid1")
 
 ### LRU-2 mode
 
-- 💬 [What Is LRU-2](#What%20Is%20LRU-2)
+- 💬 [What Is LRU-2](#What-Is-LRU-2)
 
 > Just follow `NewLRUCache()` directly with `.LRU2(<num>)`, and the parameter `<num>` represents the number of items in the `LRU-2` hot queue (per bucket)
 ``` go
@@ -187,7 +187,7 @@ stats.Stats().Range(func(k, v interface{}) bool {
 
 ## Distributed Consistency Plugin
 
-- 💬 [Principle Explanation](#Principle%20of%20Distributed%20Consistency%20Plugin)
+- 💬 [Principle Explanation](#Principle-of-Distributed-Consistency-Plugin)
 
 ### Import the `dist` package
 ``` go
