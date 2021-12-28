@@ -32,7 +32,7 @@
 </p>
 <p align="center">Extremely easy, ultra fast, concurrency-safe and support distributed consistency.</p>
 
-# Features
+## Features
 
 - 🤏  Less than 300 lines, cost only ~30s to assemble
 - 🚀  Extremely easy, ultra fast and  concurrency-safe
@@ -101,9 +101,9 @@ c.Del("uid1")
   - First parameter is the number of buckets, each bucket will use an independent lock
     - Don't worry, just set as you want, `orcache` will find a suitable number which is convenient for mask calculation later
   - Second parameter is the number of items that each bucket can hold
-    - When `orcache` is full, there should be `first parameter ✖️second parameter` item
+    - When `orcache` is full, there should be `first parameter X second parameter` item
   - Third parameter is the expiration time of each item
-    -`orcache` uses internal counter to improve performance, default 100ms accuracy, calibration every second
+    - `orcache` uses internal counter to improve performance, default 100ms accuracy, calibration every second
 
 ## Best Practices
 
@@ -289,7 +289,7 @@ dist.OnDel("user", "uid1")
 > `orcache` is an upgraded version of the [`lrucache`](http://github.com/orca-zhang/lrucache) library
 
 - Bottom layer is the most basic `LRU` implemented with native map and `node` that stores double-linked lists (the longest not visited)
-   - PS: All other versions I implemented ([go](https://github.com/orca-zhang/lrucache) / [C++](https://github.com/ez8-co/linked_hash) / [js](https://github.com/orca-zhang/orcache.js)) in leetcode are solutions beats 100%.
+   - PS: All other versions I implemented ([go](https://github.com/orca-zhang/lrucache) / [C++](https://github.com/ez8-co/linked_hash) / [js](https://github.com/orca-zhang/orcache.js)) in leetcode are solutions beats 100% submissions.
 - Second layer includes bucketing strategy, concurrency control, and expiration control (it will automatically adapt to power-of-two buckets to facilitate mask calculation)
 - Layer 2.5 implements the `LRU-2` ability in a very simple way, the code does not exceed 20 lines, directly look at the source code (search for the keyword `LRU-2`)
 
