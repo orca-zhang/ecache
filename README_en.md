@@ -107,8 +107,8 @@ c.Del("uid1")
 
 ## Best Practices
 
-- Store pointers for complex objects (note that ⚠️ do not modify its fields once it is put in, even if it is taken out again, because the item may be accessed by other people at the same time)
-   - If you need to modify, the solution: take out each individual assignment of the field, or use [copier to make a deep copy and modify on the copy](#Need-to-modify,-and-store-the-object-pointer)
+- Store pointers for complex objects (Note: ⚠️ Do not modify its fields once it is put in, even if it is taken out again, because the item may be accessed by other people at the same time)
+   - If you need to modify, the solution: take out each individual assignment of the field, or use [copier to make a deep copy and modify on the copy](#need-to-modify-and-store-the-object-pointer)
 - Objects can also be stored directly (compared to the previous one, the performance is worse because there are copy operations when taken out)
 - The larger cached objects, the better, the upper level of the business, the better (save memory assembly and data organization time)
 - If you don’t want to erase the hot data due to traversal requests, you can switch to [`LRU-2` mode](#LRU-2-mode), there may be very little loss (💬 [What Is LRU-2](#What-Is-LRU-2))
@@ -135,7 +135,7 @@ c.Put("uid1", nil)
 ``` go
 // When reading, it is almost like normal
 if v, ok := c.Get("uid1"); ok {
-  if v == nil { // Note⚠️ it is necessary to judge whether it is empty
+  if v == nil { // Note:⚠️ it is necessary to judge whether it is empty
     return nil  // If it is empty, then return `nil` or you can prevent `uid1` from appearing in the list of source to be queried
   }
   return v.(*UserInfo)
@@ -160,7 +160,7 @@ o.Status = 1      // Modify the field of the copy
 
 ## Cache Usage Statistics
 
-> The implementation is super simple. After the inspector is injected, only one more atomic operation is added to each operation. See [details](/stats/stats.go#L25).
+> The implementation is super simple. After the inspector is injected, only one more atomic operation is added to each operation. See [details](/stats/stats.go#L26).
 
 ##### Import the `stats` package
 ``` go
@@ -198,7 +198,7 @@ import (
 
 ### Bind cache instance
 > The name is a custom pool name, which will be aggregated by name internally.\
-> Note⚠️ The binding can be placed in global scope and does not depend on initialization
+> Note:⚠️ The binding can be placed in global scope and does not depend on initialization
 ``` go
 var _ = dist.Bind("user", c)
 var _ = dist.Bind("user", c0, c1, c2)
@@ -229,7 +229,7 @@ dist.Init(goredis.Take(redisCli, 100000)) // Second parameter is size of channel
 ```
 
 #### redigo
-> Note⚠️ `github.com/gomodule/redigo` requires minimum version `go 1.14`
+> Note:⚠️ `github.com/gomodule/redigo` requires minimum version `go 1.14`
 ``` go
 import (
     "github.com/orca-zhang/orcache/dist/redigo"
@@ -311,13 +311,13 @@ dist.OnDel("user", "uid1")
 - In fact, it simply uses the pubsub feature of redis
 - Proactively inform that the cached information is updated and broadcast it to all the nodes
 - In a sense, it is just a way to narrow the inconsistent time window (there is a network delay and it is not guaranteed to be completed)
-- Pay Attention ⚠️:
+- Pay Attention: ⚠️
    - Reduce the use even if necessary, suitable for the scenario where write less read more `WORM(Write-Once-Read-Many)`
      - Because redis's performance is not as good as memory after all, and there is broadcast communication (write amplification)
    - The following scenarios will be degraded (the time window becomes larger), but at least the strong consistency of the current node will be guaranteed
      - Redis is unavailable, network error
      - Consume goroutine panic
-     - When there are nodes that are not ready (grayscale `canary` is released, or in the process of release), such as
+     - When not all nodes are ready (`canary` deployment, or in the process of deployment), such as
        - Already used `orcache` but added this plugin for the first time
        - Newly added cached data or newly added delete operation
 
