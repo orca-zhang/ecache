@@ -30,7 +30,7 @@
     <img src="https://img.shields.io/badge/benchmark-click--me-brightgreen.svg?style=flat"/>
   </a>
 </p>
-<p align="center">一款极简超快、并发安全、支持分布式一致性的轻量级内存缓存</p>
+<p align="center">一款极简设计、高性能、并发安全、支持分布式一致性的轻量级内存缓存</p>
 
 ## 特性
 
