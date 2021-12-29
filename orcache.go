@@ -245,7 +245,7 @@ func (c *Cache) Del(key string) {
 	n, s := c.insts[idx][0].del(key)
 	if c.insts[idx][1] != nil { // (if LRU-2 mode not support, loss is little)
 		n2, s2 := c.insts[idx][1].del(key)
-		if n == nil && n != nil {
+		if n2 != nil && (n == nil || n.ts < n2.ts) { // callback latest added one if both exists
 			n, s = n2, s2
 		}
 	}
