@@ -36,10 +36,9 @@ type node struct {
 
 // a data structure that is efficient to insert/fetch/delete cache items [both O(1) time complexity]
 type cache struct {
-	cap  int
-	hmap map[string]*node
-	head *node // not use pointer-to-pointer here,
-	tail *node // coz it's trade-off for performance
+	cap        int
+	hmap       map[string]*node
+	head, tail *node // not use pointer-to-pointer here, coz it's trade-off for performance
 }
 
 // create a new lru cache object
@@ -47,8 +46,8 @@ func create(cap int) *cache {
 	return &cache{cap, make(map[string]*node, cap), nil, nil}
 }
 
-// put a cache item into lru cache, if insert return true
-func (c *cache) put(k string, v interface{}) int {
+// put a cache item into lru cache, if added return 1, updated return 0
+func (c *cache) put(k string, v interface{}, on inspector) int {
 	if e, ok := c.hmap[k]; ok {
 		e.v, e.ts = v, now()
 		c._refresh(e)
@@ -59,11 +58,12 @@ func (c *cache) put(k string, v interface{}) int {
 		return 0
 	} else if len(c.hmap) >= c.cap {
 		// transfer the tail item as the new item, then refresh
+		on(PUT, c.tail.k, &c.tail.v, -1)
 		delete(c.hmap, c.tail.k)
 		c.tail.k, c.tail.v, c.tail.ts = k, v, now() // reuse to reduce gc
 		c.hmap[k] = c.tail
 		c._refresh(c.tail)
-		return -1
+		return 1
 	}
 
 	e := &node{nil, c.head, k, v, now()}
@@ -77,36 +77,31 @@ func (c *cache) put(k string, v interface{}) int {
 }
 
 // get value of key from lru cache with result
-func (c *cache) get(k string) (*node, bool) {
+func (c *cache) get(k string) (*node, int) {
 	if e, ok := c.hmap[k]; ok {
 		c._refresh(e)
-		return e, ok
+		return e, 1
 	}
-	return nil, false
+	return nil, 0
 }
 
 // delete item by key from lru cache
-func (c *cache) del(k string) (*node, bool) {
+func (c *cache) del(k string) (*node, int) {
 	if e, ok := c.hmap[k]; ok {
 		delete(c.hmap, k)
 		c._remove(e)
-		return e, true
+		return e, 1
 	}
-	return nil, false
+	return nil, 0
 }
 
-// calls f sequentially for each key and value present in the lru cache
-func (c *cache) foreach(f func(k string, v interface{}) bool) {
+// calls f sequentially for each valid item in the lru cache
+func (c *cache) walk(walker func(k string, v interface{}, ts int64) bool) {
 	for i := c.head; i != nil; i = i.n {
-		if !f(i.k, i.v) {
-			break
+		if !walker(i.k, i.v, i.ts) {
+			return
 		}
 	}
-}
-
-// length of lru cache
-func (c *cache) length() int {
-	return len(c.hmap)
 }
 
 func (c *cache) _refresh(e *node) {
@@ -145,11 +140,11 @@ func hashCode(s string) (hash int) {
 
 // Cache - concurrent cache structure
 type Cache struct {
-	locks  []sync.Mutex
-	insts  [][2]*cache // level-0 for normal LRU, level-1 for LRU-2
-	mask   int
-	expire time.Duration
-	on     inspector
+	locks      []sync.Mutex
+	insts      [][2]*cache // level-0 for normal LRU, level-1 for LRU-2
+	mask       int
+	expiration time.Duration
+	on         inspector
 }
 
 func nextPowOf2(cap int) int {
@@ -169,21 +164,22 @@ func nextPowOf2(cap int) int {
 
 // NewLRUCache - create lru cache
 // `bucketCnt` is buckets that shard items to reduce lock racing
-// `capPerBkt` is length of each bucket
-// can store `capPerBkt * bucketCnt` count of element in Cache at most
-// `expire` is expiration that item alive (and we only use lazy eviction here)
-func NewLRUCache(bucketCnt int, capPerBkt int, expire time.Duration) *Cache {
+// `capPerBkt` is length of each bucket, can store `capPerBkt * bucketCnt` count of items in Cache at most
+// optional `expiration` is item alive time (and we only use lazy eviction here), default `0` stands for permanent
+func NewLRUCache(bucketCnt int, capPerBkt int, expiration ...time.Duration) *Cache {
 	size := nextPowOf2(bucketCnt)
-	c := &Cache{make([]sync.Mutex, size), make([][2]*cache, size), size - 1, expire, func(int, string, int) {}}
+	c := &Cache{make([]sync.Mutex, size), make([][2]*cache, size), size - 1, 0, func(int, string, *interface{}, int) {}}
 	for i := range c.insts {
 		c.insts[i][0] = create(capPerBkt)
+	}
+	if len(expiration) > 0 {
+		c.expiration = expiration[0]
 	}
 	return c
 }
 
 // LRU2 - add LRU-2 support (especially LRU-2 that when item visited twice it moves to upper-level-cache)
-// `capPerBkt` is length of each LRU-2 bucket
-// can store extra `capPerBkt * bucketCnt` count of element in Cache at most
+// `capPerBkt` is length of each LRU-2 bucket, can store extra `capPerBkt * bucketCnt` count of items in Cache at most
 func (c *Cache) LRU2(capPerBkt int) *Cache {
 	for i := range c.insts {
 		c.insts[i][1] = create(capPerBkt)
@@ -195,69 +191,81 @@ func (c *Cache) LRU2(capPerBkt int) *Cache {
 func (c *Cache) Put(key string, val interface{}) {
 	idx := hashCode(key) & c.mask
 	c.locks[idx].Lock()
-	ok := c.insts[idx][0].put(key, val)
+	status := c.insts[idx][0].put(key, val, c.on)
 	c.locks[idx].Unlock()
-	c.on(PUT, key, ok)
+	c.on(PUT, key, &val, status)
 }
 
 // internal sub function that get item at specific level
-func (c *Cache) get(key string, idx, level int) (*node, bool) {
-	if n, b := c.insts[idx][level].get(key); b {
-		if now()-n.ts > int64(c.expire) {
-			// not necessary to remove the expired item here
-			// removal is also ok that can control the memory usage before the cache is full, but will cause GC thrashing
-			// c.insts[idx][level].del(key)
-			return n, false
+func (c *Cache) get(key string, idx, level int) (*node, int) {
+	if n, s := c.insts[idx][level].get(key); s > 0 {
+		if c.expiration > 0 && now()-n.ts > int64(c.expiration) {
+			// not necessary to remove the expired item here, otherwise will cause GC thrashing
+			return nil, 0
 		}
-		return n, b
+		return n, s
 	}
-	return nil, false
+	return nil, 0
 }
 
 // Get - get value of key from cache with result
-// if the item is expired, maybe you can also get the former item even if it returns `false`
-func (c *Cache) Get(key string) (v interface{}, b bool) {
+func (c *Cache) Get(key string) (interface{}, bool) {
 	idx := hashCode(key) & c.mask
 	c.locks[idx].Lock()
 	var n *node
+	var s int
 	if c.insts[idx][1] == nil { // (if LRU-2 mode not support, loss is little)
 		// normal lru mode
-		n, b = c.get(key, idx, 0)
+		n, s = c.get(key, idx, 0)
 	} else {
 		// LRU-2 mode
-		n, b = c.insts[idx][0].del(key)
-		if !b {
+		n, s = c.insts[idx][0].del(key)
+		if s <= 0 {
 			// re-find in level-1
-			n, b = c.get(key, idx, 1)
+			n, s = c.get(key, idx, 1)
 		} else {
 			// find in level-0, move to level-1
-			c.insts[idx][1].put(key, n.v)
+			c.insts[idx][1].put(key, n.v, c.on)
 		}
 	}
-	if !b {
+	if s <= 0 {
 		c.locks[idx].Unlock()
-		c.on(GET, key, 0)
-		return v, false
+		c.on(GET, key, nil, 0)
+		return nil, false
 	}
 	c.locks[idx].Unlock()
-	c.on(GET, key, 1)
-	return n.v, b
+	c.on(GET, key, &n.v, 1)
+	return n.v, true
 }
 
 // Del - delete item by key from cache
 func (c *Cache) Del(key string) {
 	idx := hashCode(key) & c.mask
 	c.locks[idx].Lock()
-	_, b := c.insts[idx][0].del(key)
+	n, s := c.insts[idx][0].del(key)
 	if c.insts[idx][1] != nil { // (if LRU-2 mode not support, loss is little)
-		_, b2 := c.insts[idx][1].del(key)
-		b = b || b2
+		n2, s2 := c.insts[idx][1].del(key)
+		if n == nil && n != nil {
+			n, s = n2, s2
+		}
+	}
+	if s > 0 {
+		c.on(DEL, key, &n.v, 1)
+	} else {
+		c.on(DEL, key, nil, 0)
 	}
 	c.locks[idx].Unlock()
-	if b {
-		c.on(DEL, key, 1)
-	} else {
-		c.on(DEL, key, 0)
+}
+
+// Walk - calls f sequentially for each valid item in the lru cache, return false to stop iteration for every bucket
+func (c *Cache) Walk(walker func(k string, v interface{}, ts int64) bool) {
+	for i := range c.insts {
+		c.locks[i].Lock()
+		c.insts[i][0].walk(walker)
+		if c.insts[i][1] != nil {
+			c.insts[i][1].walk(walker)
+		}
+		c.locks[i].Unlock()
 	}
 }
 
@@ -267,14 +275,18 @@ const (
 	DEL
 )
 
-// can be used to statistics like cache hit/miss rate
-type inspector func(action int, key string, ok int)
+// inspector - can be used to statistics cache hit/miss rate or other scenario like buffer queue
+//   `action`:PUT, `status`: evicted=-1, updated=0, added=1
+//   `action`:GET, `status`: miss=0, hit=1
+//   `action`:DEL, `status`: miss=0, hit=1
+//   `value` only valid when `status` is not 0 or `action` is PUT
+type inspector func(action int, key string, value *interface{}, status int)
 
 // Inspect - to inspect the actions
 func (c *Cache) Inspect(insptr inspector) {
 	old := c.on
-	c.on = func(action int, key string, ok int) {
-		insptr(action, key, ok)
-		old(action, key, ok)
+	c.on = func(action int, key string, value *interface{}, status int) {
+		old(action, key, value, status) // call as the declared order, old first
+		insptr(action, key, value, status)
 	}
 }
