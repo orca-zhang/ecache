@@ -341,8 +341,39 @@ func TestLRUCache(t *testing.T) {
 	}
 }
 
+func TestWalk(t *testing.T) {
+	m := make(map[string]string, 0)
+	lc := NewLRUCache(2, 3, 10*time.Second)
+	lc.Put("1", "1")
+	m["1"] = "1"
+	lc.Put("2", "2")
+	m["2"] = "2"
+	lc.Put("3", "3")
+	m["3"] = "3"
+	v, _ := lc.Get("2") // check reuse
+	lc.Put("4", "4")
+	m["4"] = "4"
+	lc.Put("5", "5")
+	m["5"] = "5"
+	lc.Put("6", "6")
+	m["6"] = "6"
+	if v != "2" {
+		t.Error("case 3 failed")
+	}
+	lc.Walk(func(key string, val interface{}, ts int64) bool {
+		if m[key] != val.(string) {
+			t.Error("case failed")
+		}
+		delete(m, key)
+		return true
+	})
+	if len(m) > 0 {
+		t.Error("case failed")
+	}
+}
+
 func TestLRU2Cache(t *testing.T) {
-	lc := NewLRUCache(1, 3, 1*time.Second).LRU2(1)
+	lc := NewLRUCache(1, 3, time.Second).LRU2(1)
 	lc.Put("1", "1")
 	lc.Put("2", "2")
 	lc.Put("3", "3")
@@ -353,7 +384,21 @@ func TestLRU2Cache(t *testing.T) {
 	}
 	lc.Put("4", "4")
 	lc.Put("5", "5")
-	if _, ok := lc.Get("1"); !ok {
+	if _, ok := lc.Get("1"); !ok { // l0 -> l1
+		t.Error("case 4 failed")
+	}
+
+	toCheck := "1"
+	lc.Inspect(func(action int, key string, value *interface{}, ok int) {
+		if action == DEL && value != nil && *value != toCheck {
+			t.Error("case 4 failed")
+		}
+	})
+
+	lc.Del("1")
+	// del in l1
+
+	if _, ok := lc.Get("1"); ok {
 		t.Error("case 4 failed")
 	}
 	lc.Put("6", "6")
@@ -361,8 +406,16 @@ func TestLRU2Cache(t *testing.T) {
 	if _, ok := lc.Get("4"); ok {
 		t.Error("case 4 failed")
 	}
+
+	// l0 -> l1 both exist
 	lc.Put("1", "1")
+	lc.Get("1") // l0 -> l1
+	lc.Put("1", "2")
+
+	// both del, return newest one
+	toCheck = "2"
 	lc.Del("1")
+
 	if _, ok := lc.Get("1"); ok {
 		t.Error("case 4 failed")
 	}
@@ -413,9 +466,14 @@ func TestConcurrentLRU2(t *testing.T) {
 func TestInspect(t *testing.T) {
 	lc := NewLRUCache(1, 3, 1*time.Second)
 	lc.Inspect(func(action int, key string, value *interface{}, ok int) {
-		fmt.Println(action, key, value, ok)
+		if value != nil {
+			fmt.Println(action, key, *value, ok)
+		} else {
+			fmt.Println(action, key, ok)
+		}
 	})
 	lc.Put("1", "1")
+	lc.Put("1", "2")
 	lc.Put("2", "2")
 	lc.Put("3", "3")
 	v, _ := lc.Get("2") // check reuse
@@ -425,4 +483,7 @@ func TestInspect(t *testing.T) {
 	if v != "2" {
 		t.Error("case 3 failed")
 	}
+	lc.Get("10")
+	lc.Del("6")
+	lc.Del("10")
 }
