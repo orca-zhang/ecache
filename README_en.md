@@ -102,8 +102,9 @@ c.Del("uid1")
     - Don't worry, just set as you want, `orcache` will find a suitable number which is convenient for mask calculation later
   - Second parameter is the number of items that each bucket can hold
     - When `orcache` is full, there should be `first parameter X second parameter` item
-  - Third parameter is the expiration time of each item
+  - \[Optional\]Third parameter is the expiration time of each item
     - `orcache` uses internal counter to improve performance, default 100ms accuracy, calibration every second
+    - No parameter or pass `0`, means permanent
 
 ## Best Practices
 
@@ -114,6 +115,9 @@ c.Del("uid1")
 - If you don’t want to erase the hot data due to traversal requests, you can switch to [`LRU-2` mode](#LRU-2-mode), there may be very little loss (💬 [What Is LRU-2](#What-Is-LRU-2))
 - One instance can store multiple types of objects, try adding a prefix when formatting the key and separating it with a colon
 - For scenes with large concurrent visits, try `256`, `1024` buckets, or even more
+- Can be used as a **buffer queue** to merge updates to reduce disk flushes (data can be rebuilt or tolerate loss of power outage)
+   - [Add an `Inspector`](#inject-an-inspector) to monitor the eviction event
+   - At the end or intervally call `Walk` to flush the data to storage
 
 ## Special Scenarios
 
@@ -158,6 +162,29 @@ copier.Copy(o, v) // Copy from `v` to `o`
 o.Status = 1      // Modify the field of the copy
 ```
 
+### Inject an inspector
+
+``` go
+// inspector - can be used to do statistics or buffer queues, etc.
+// `action`:PUT, `status`: evicted=-1, updated=0, added=1
+// `action`:GET, `status`: miss=0, hit=1
+// `action`:DEL, `status`: miss=0, hit=1
+// `value` is only valid when `status` is not 0 or `action` is PUT
+type inspector func(action int, key string, value *interface{}, status int)
+
+// Inspect - inject a inspector
+func (c *Cache) Inspect(insptr inspector)
+```
+
+- How to use
+``` go
+c.Inspect(func(action int, key string, value *interface{}, status int) {
+   // TODO: add what you want to do
+   //     Inspector will be executed in sequence according to the injection order
+   //     Note:⚠️ If there is a operation that takes a long time, try to transfer job to another channel to ensure not blocking current coroutine.
+})
+```
+
 ## Cache Usage Statistics
 
 > The implementation is super simple. After the inspector is injected, only one more atomic operation is added to each operation. See [details](/stats/stats.go#L26).
@@ -170,7 +197,8 @@ import (
 ```
 
 #### Bind the cache instance
-> The name is a custom pool name, which will be aggregated by name internally.
+> The name is a custom pool name, which will be aggregated by name internally.\
+> Note:⚠️ The binding can be placed in global scope.
 ``` go
 var _ = stats.Bind("user", c)
 var _ = stats.Bind("user", c0, c1, c2)
@@ -198,7 +226,7 @@ import (
 
 ### Bind cache instance
 > The name is a custom pool name, which will be aggregated by name internally.\
-> Note:⚠️ The binding can be placed in global scope and does not depend on initialization
+> Note:⚠️ The binding can be placed in global scope and does not depend on initialization.
 ``` go
 var _ = dist.Bind("user", c)
 var _ = dist.Bind("user", c0, c1, c2)
@@ -283,6 +311,9 @@ dist.OnDel("user", "uid1")
 - Inconsistent-tolerated data
    - Such as user avatar, nickname, product inventory (the actual order will be checked again in db), etc.
    - Modified configuration (expiration time is 10 seconds, then it will take effect with a maximum delay of 10 seconds)
+- Buffer queue: merge updates to reduce disk flushes
+   - Achieve strong consistency through patching query with cache diff (in the case of distributed, it is necessary to ensure that the same user/device is balanced to the same node at the load balancing layer)
+   - Data can be rebuilt or tolerate loss of power outage
 
 ## Design Ideas
 

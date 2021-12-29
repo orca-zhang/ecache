@@ -12,34 +12,89 @@ import (
 func TestLRU2Cache(t *testing.T) {
 	lc := orcache.NewLRUCache(1, 3, 1*time.Second).LRU2(1)
 	Bind("lc", lc)
-	lc.Put("1", "1")
-	lc.Put("2", "2")
-	lc.Put("3", "3")
-	lc.Get("2") // l0 -> l1
-	lc.Get("3") // l0 -> l1
-	if _, ok := lc.Get("2"); ok {
-		t.Error("case 4 failed")
+	lc.Put("1", "1")              // Added
+	lc.Put("2", "2")              // Added
+	lc.Put("3", "3")              // Added
+	lc.Get("2")                   // l0 -> l1 GetHit
+	lc.Get("3")                   // l0 -> l1 GetHit, Evicted
+	if _, ok := lc.Get("2"); ok { // GetMiss
+		t.Error("case 1 failed")
 	}
-	lc.Put("4", "4")
-	lc.Put("5", "5")
-	if _, ok := lc.Get("1"); !ok {
-		t.Error("case 4 failed")
+	lc.Put("4", "4")               // Added
+	lc.Put("5", "5")               // Added
+	if _, ok := lc.Get("1"); !ok { // l0 -> l1 GetHit, Evicted
+		t.Error("case 1 failed")
 	}
-	lc.Put("6", "6")
-	lc.Put("7", "7")
-	if _, ok := lc.Get("4"); ok {
-		t.Error("case 4 failed")
-	}
-	lc.Del("7")
-	lc.Del("8")
-	lc.Put("1", "1")
-	lc.Put("1", "2")
-	lc.Del("1")
-	if _, ok := lc.Get("1"); ok {
-		t.Error("case 4 failed")
-	}
+
 	Stats().Range(func(k, v interface{}) bool {
 		fmt.Printf("stats: %s %+v\n", k, v)
+		if k == "lc" {
+			node := v.(*StatsNode)
+			if node.Evicted != 2 {
+				t.Error("case 1 failed")
+			}
+			if node.Updated != 0 {
+				t.Error("case 1 failed")
+			}
+			if node.Added != 5 {
+				t.Error("case 1 failed")
+			}
+			if node.GetMiss != 1 {
+				t.Error("case 1 failed")
+			}
+			if node.GetHit != 3 {
+				t.Error("case 1 failed")
+			}
+			if node.DelMiss != 0 {
+				t.Error("case 1 failed")
+			}
+			if node.DelHit != 0 {
+				t.Error("case 1 failed")
+			}
+		}
+		return true
+	})
+
+	lc.Put("6", "6")              // Added
+	lc.Put("7", "7")              // Added, Evicted
+	if _, ok := lc.Get("4"); ok { // GetMiss
+		t.Error("case 1 failed")
+	}
+	lc.Del("7")                   // DelHit
+	lc.Del("8")                   // DelMiss
+	lc.Put("1", "1")              // Added
+	lc.Put("1", "2")              // Updated
+	lc.Del("1")                   // DelHit
+	if _, ok := lc.Get("1"); ok { // GetMiss
+		t.Error("case 1 failed")
+	}
+
+	Stats().Range(func(k, v interface{}) bool {
+		fmt.Printf("stats: %s %+v\n", k, v)
+		if k == "lc" {
+			node := v.(*StatsNode)
+			if node.Evicted != 3 {
+				t.Error("case 1 failed")
+			}
+			if node.Updated != 1 {
+				t.Error("case 1 failed")
+			}
+			if node.Added != 8 {
+				t.Error("case 1 failed")
+			}
+			if node.GetMiss != 3 {
+				t.Error("case 1 failed")
+			}
+			if node.GetHit != 3 {
+				t.Error("case 1 failed")
+			}
+			if node.DelMiss != 1 {
+				t.Error("case 1 failed")
+			}
+			if node.DelHit != 2 {
+				t.Error("case 1 failed")
+			}
+		}
 		return true
 	})
 }
@@ -72,37 +127,18 @@ func TestConcurrent(t *testing.T) {
 
 func TestBindToExistPool(t *testing.T) {
 	lcOld := orcache.NewLRUCache(1, 3, 1*time.Second).LRU2(1)
-	Bind("lc", lcOld)
+	Bind("lc2", lcOld)
 	lc := orcache.NewLRUCache(1, 3, 1*time.Second).LRU2(1)
-	Bind("lc", lc)
+	Bind("lc2", lc)
 	lc.Put("1", "1")
-	lc.Put("2", "2")
-	lc.Put("3", "3")
-	lc.Get("2") // l0 -> l1
-	lc.Get("3") // l0 -> l1
-	if _, ok := lc.Get("2"); ok {
-		t.Error("case 4 failed")
-	}
-	lc.Put("4", "4")
-	lc.Put("5", "5")
-	if _, ok := lc.Get("1"); !ok {
-		t.Error("case 4 failed")
-	}
-	lc.Put("6", "6")
-	lc.Put("7", "7")
-	if _, ok := lc.Get("4"); ok {
-		t.Error("case 4 failed")
-	}
-	lc.Del("7")
-	lc.Del("8")
-	lc.Put("1", "1")
-	lc.Put("1", "2")
-	lc.Del("1")
-	if _, ok := lc.Get("1"); ok {
-		t.Error("case 4 failed")
-	}
 	Stats().Range(func(k, v interface{}) bool {
 		fmt.Printf("stats: %s %+v\n", k, v)
+		if k == "lc2" {
+			node := v.(*StatsNode)
+			if node.Added != 1 {
+				t.Error("case 3 failed")
+			}
+		}
 		return true
 	})
 }
