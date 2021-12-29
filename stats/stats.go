@@ -21,9 +21,9 @@ type StatsNode struct {
 func Bind(pool string, caches ...*orcache.Cache) error {
 	v, _ := m.LoadOrStore(pool, &StatsNode{})
 	for _, c := range caches {
-		c.Inspect(func(action int, _ string, ok int) {
+		c.Inspect(func(action int, _ string, _ *interface{}, status int) {
 			// very, very, very low-cost for stats
-			atomic.AddUint64((*uint64)(unsafe.Pointer(uintptr(unsafe.Pointer(v.(*StatsNode)))+uintptr(ok+action*2-1)*unsafe.Sizeof(&ok))), 1)
+			atomic.AddUint64((*uint64)(unsafe.Pointer(uintptr(unsafe.Pointer(v.(*StatsNode)))+uintptr(status+action*2-1)*unsafe.Sizeof(&status))), 1)
 		})
 	}
 	return nil
