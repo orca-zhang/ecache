@@ -15,23 +15,25 @@ type Elem struct {
 
 func Test_create(t *testing.T) {
 	c := create(5)
-	if c.length() != 0 {
+	if len(c.hmap) != 0 {
 		t.Error("case 1 failed")
 	}
 }
 
+var on = func(int, string, *interface{}, int) {}
+
 func Test_put(t *testing.T) {
 	c := create(0)
-	c.put("1", "1")
-	if c.length() != 0 {
+	c.put("1", "1", on)
+	if len(c.hmap) != 0 {
 		t.Error("case 1.1 failed")
 	}
 
 	c = create(5)
-	c.put("1", "1")
-	c.put("2", "2")
-	c.put("1", "3")
-	if c.length() != 2 {
+	c.put("1", "1", on)
+	c.put("2", "2", on)
+	c.put("1", "3", on)
+	if len(c.hmap) != 2 {
 		t.Error("case 2.1 failed")
 	}
 
@@ -51,11 +53,11 @@ func Test_put(t *testing.T) {
 		e = e.Next()
 	}
 
-	c.put("3", "4")
-	c.put("4", "5")
-	c.put("5", "6")
-	c.put("2", "7")
-	if c.length() != 5 {
+	c.put("3", "4", on)
+	c.put("4", "5", on)
+	c.put("5", "6", on)
+	c.put("2", "7", on)
+	if len(c.hmap) != 5 {
 		t.Error("case 3.1 failed")
 	}
 
@@ -97,8 +99,8 @@ func Test_put(t *testing.T) {
 		e = e.Next()
 	}
 
-	c.put("6", "8")
-	if c.length() != 5 {
+	c.put("6", "8", on)
+	if len(c.hmap) != 5 {
 		t.Error("case 4.1 failed")
 	}
 
@@ -124,13 +126,13 @@ func Test_put(t *testing.T) {
 
 func Test_get(t *testing.T) {
 	c := create(2)
-	c.put("1", "1")
-	c.put("2", "2")
+	c.put("1", "1", on)
+	c.put("2", "2", on)
 	if v, _ := c.get("1"); v.v != "1" {
 		t.Error("case 1.1 failed")
 	}
-	c.put("3", "3")
-	if c.length() != 2 {
+	c.put("3", "3", on)
+	if len(c.hmap) != 2 {
 		t.Error("case 1.2 failed")
 	}
 
@@ -153,11 +155,11 @@ func Test_get(t *testing.T) {
 
 func Test_delete(t *testing.T) {
 	c := create(5)
-	c.put("3", "4")
-	c.put("4", "5")
-	c.put("5", "6")
-	c.put("2", "7")
-	c.put("6", "8")
+	c.put("3", "4", on)
+	c.put("4", "5", on)
+	c.put("5", "6", on)
+	c.put("2", "7", on)
+	c.put("6", "8", on)
 	c.del("5")
 
 	l := list.New()
@@ -165,7 +167,7 @@ func Test_delete(t *testing.T) {
 	l.PushBack(&Elem{"2", "7"})
 	l.PushBack(&Elem{"4", "5"})
 	l.PushBack(&Elem{"3", "4"})
-	if c.length() != 4 {
+	if len(c.hmap) != 4 {
 		t.Error("case 1.1 failed")
 	}
 
@@ -187,7 +189,7 @@ func Test_delete(t *testing.T) {
 	l.PushBack(&Elem{"2", "7"})
 	l.PushBack(&Elem{"4", "5"})
 	l.PushBack(&Elem{"3", "4"})
-	if c.length() != 3 {
+	if len(c.hmap) != 3 {
 		t.Error("case 2.1 failed")
 	}
 
@@ -208,7 +210,7 @@ func Test_delete(t *testing.T) {
 	l = list.New()
 	l.PushBack(&Elem{"2", "7"})
 	l.PushBack(&Elem{"4", "5"})
-	if c.length() != 2 {
+	if len(c.hmap) != 2 {
 		t.Error("case 3.1 failed")
 	}
 
@@ -225,13 +227,13 @@ func Test_delete(t *testing.T) {
 	}
 }
 
-func Test_foreach(t *testing.T) {
+func Test_walk(t *testing.T) {
 	c := create(5)
-	c.put("3", "4")
-	c.put("4", "5")
-	c.put("5", "6")
-	c.put("2", "7")
-	c.put("6", "8")
+	c.put("3", "4", on)
+	c.put("4", "5", on)
+	c.put("5", "6", on)
+	c.put("2", "7", on)
+	c.put("6", "8", on)
 
 	l := list.New()
 	l.PushBack(&Elem{"6", "8"})
@@ -241,8 +243,8 @@ func Test_foreach(t *testing.T) {
 	l.PushBack(&Elem{"3", "4"})
 
 	e := l.Front()
-	c.foreach(
-		func(key string, val interface{}) bool {
+	c.walk(
+		func(key string, val interface{}, ts int64) bool {
 			v := e.Value.(*Elem)
 			if key != v.key {
 				t.Error("case 1.1 failed: ", key, v.key)
@@ -259,8 +261,8 @@ func Test_foreach(t *testing.T) {
 	}
 
 	e = l.Front()
-	c.foreach(
-		func(key string, val interface{}) bool {
+	c.walk(
+		func(key string, val interface{}, ts int64) bool {
 			v := e.Value.(*Elem)
 			if key != v.key {
 				t.Error("case 1.1 failed: ", key, v.key)
@@ -302,14 +304,25 @@ func TestNextPowOf2(t *testing.T) {
 	}
 }
 
-func TestTimeout(t *testing.T) {
-	lc := NewLRUCache(2, 1, 1*time.Second)
+func TestExpiration(t *testing.T) {
+	lc := NewLRUCache(2, 1, time.Second)
 	lc.Put("1", "2")
 	if v, ok := lc.Get("1"); !ok || v != "2" {
 		t.Error("case 1 failed")
 	}
 	time.Sleep(2 * time.Second)
 	if _, ok := lc.Get("1"); ok {
+		t.Error("case 2 failed")
+	}
+
+	// permanent
+	lc2 := NewLRUCache(2, 1, 0)
+	lc2.Put("1", "2")
+	if v, ok := lc2.Get("1"); !ok || v != "2" {
+		t.Error("case 1 failed")
+	}
+	time.Sleep(time.Second)
+	if _, ok := lc2.Get("1"); !ok {
 		t.Error("case 2 failed")
 	}
 }
@@ -399,8 +412,8 @@ func TestConcurrentLRU2(t *testing.T) {
 
 func TestInspect(t *testing.T) {
 	lc := NewLRUCache(1, 3, 1*time.Second)
-	lc.Inspect(func(action int, key string, ok int) {
-		fmt.Println(action, key, ok)
+	lc.Inspect(func(action int, key string, value *interface{}, ok int) {
+		fmt.Println(action, key, value, ok)
 	})
 	lc.Put("1", "1")
 	lc.Put("2", "2")
