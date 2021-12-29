@@ -343,23 +343,20 @@ func TestLRUCache(t *testing.T) {
 
 func TestWalk(t *testing.T) {
 	m := make(map[string]string, 0)
-	lc := NewLRUCache(2, 3, 10*time.Second)
+	lc := NewLRUCache(2, 3, 10*time.Second).LRU2(3)
 	lc.Put("1", "1")
 	m["1"] = "1"
 	lc.Put("2", "2")
 	m["2"] = "2"
 	lc.Put("3", "3")
 	m["3"] = "3"
-	v, _ := lc.Get("2") // check reuse
+	lc.Get("2") // l0 -> l1
 	lc.Put("4", "4")
 	m["4"] = "4"
 	lc.Put("5", "5")
 	m["5"] = "5"
 	lc.Put("6", "6")
 	m["6"] = "6"
-	if v != "2" {
-		t.Error("case 3 failed")
-	}
 	lc.Walk(func(key string, val interface{}, ts int64) bool {
 		if m[key] != val.(string) {
 			t.Error("case failed")
