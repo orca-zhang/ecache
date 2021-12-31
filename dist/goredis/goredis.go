@@ -4,7 +4,7 @@ import (
 	"context"
 
 	"github.com/go-redis/redis/v8"
-	"github.com/orca-zhang/orcache/dist"
+	"github.com/orca-zhang/ecache/dist"
 )
 
 type GoRedisCli struct {

@@ -2,7 +2,7 @@ package goredis
 
 import (
 	"github.com/go-redis/redis/v7"
-	"github.com/orca-zhang/orcache/dist"
+	"github.com/orca-zhang/ecache/dist"
 )
 
 type GoRedisCli struct {
