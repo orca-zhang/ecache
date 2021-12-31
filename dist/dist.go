@@ -7,10 +7,10 @@ import (
 	"sync"
 	"time"
 
-	"github.com/orca-zhang/orcache"
+	"github.com/orca-zhang/ecache"
 )
 
-const topic = "orca-zhang/orcache"
+const topic = "orca-zhang/ecache"
 
 // `RedisCli`` interface used by `dist` component
 type RedisCli interface {
@@ -27,7 +27,7 @@ var m sync.Map
 
 func delAll(pool, key string) {
 	if caches, _ := m.Load(pool); caches != nil {
-		for _, c := range *(caches.(*[]*orcache.Cache)) {
+		for _, c := range *(caches.(*[]*ecache.Cache)) {
 			c.Del(key)
 		}
 	}
@@ -63,9 +63,9 @@ func Init(r RedisCli) {
 // Bind - to enable distributed consistency
 // `pool` is not necessary, it can be used to classify instances that store same items, but it will be more efficient if it is not empty
 // `caches` is cache instances to be binded
-func Bind(pool string, caches ...*orcache.Cache) error {
-	c, _ := m.LoadOrStore(pool, &[]*orcache.Cache{})
-	*(c.(*[]*orcache.Cache)) = append(*(c.(*[]*orcache.Cache)), caches...)
+func Bind(pool string, caches ...*ecache.Cache) error {
+	c, _ := m.LoadOrStore(pool, &[]*ecache.Cache{})
+	*(c.(*[]*ecache.Cache)) = append(*(c.(*[]*ecache.Cache)), caches...)
 	return nil
 }
 
