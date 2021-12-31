@@ -1,4 +1,4 @@
-package orcache
+package ecache
 
 import (
 	"sync"
