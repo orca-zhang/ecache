@@ -5,7 +5,7 @@ import (
 	"sync/atomic"
 	"unsafe"
 
-	"github.com/orca-zhang/orcache"
+	"github.com/orca-zhang/ecache"
 )
 
 var m sync.Map
@@ -18,7 +18,7 @@ type StatsNode struct {
 // Bind - to stats a cache
 // `pool` can be used to classify instances that store same items
 // `caches` is cache instances to be binded
-func Bind(pool string, caches ...*orcache.Cache) error {
+func Bind(pool string, caches ...*ecache.Cache) error {
 	v, _ := m.LoadOrStore(pool, &StatsNode{})
 	for _, c := range caches {
 		c.Inspect(func(action int, _ string, _ *interface{}, status int) {
