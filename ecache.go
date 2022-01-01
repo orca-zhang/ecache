@@ -34,9 +34,9 @@ type node struct {
 }
 
 type cache struct {
-	jmp  [][2]uint16       // 0 for prev, 1 for next, the first node stands for [tail, head]
+	dlnk [][2]uint16       // double link list, 0 for prev, 1 for next, the first node stands for [tail, head]
 	m    []node            // memory pre-allocated
-	idx  uint16            // last element index when not full
+	last uint16            // last element index when not full
 	hmap map[string]uint16 // key -> idx in []node
 }
 
@@ -45,31 +45,31 @@ func create(cap int) *cache {
 }
 
 // put a cache item into lru cache, if added return 1, updated return 0
-func (c *cache) put(k string, v *value, on inspector, free func(v *value) bool) int {
+func (c *cache) put(k string, v *value, on inspector, free func(v **value) **value) int {
 	if x, ok := c.hmap[k]; ok {
-		_, c.m[x-1].v, c.m[x-1].ts = free(c.m[x-1].v), v, now()
+		*(free(&c.m[x-1].v)), c.m[x-1].ts = v, now()
 		c.ajust(x, p, n) // refresh to head
 		return 0
 	}
 
-	if c.idx == uint16(cap(c.m)) {
-		tail := c.jmp[0][p]
-		if c.m[tail-1].ts > 0 { // do not notify for mark delete ones
-			on(PUT, c.m[tail-1].k, c.m[tail-1].v.v, c.m[tail-1].v.i, -1)
+	if c.last == uint16(cap(c.m)) {
+		tail := &c.m[c.dlnk[0][p]-1]
+		if (*tail).ts > 0 { // do not notify for mark delete ones
+			on(PUT, (*tail).k, (*tail).v.v, (*tail).v.i, -1)
 		}
-		delete(c.hmap, c.m[tail-1].k)
-		_, c.hmap[k], c.m[tail-1].k, c.m[tail-1].v, c.m[tail-1].ts = free(c.m[tail-1].v), tail, k, v, now() // reuse to reduce gc
-		c.ajust(tail, p, n)                                                                                 // refresh to head
+		delete(c.hmap, (*tail).k)
+		c.hmap[k], (*tail).k, *(free(&(*tail).v)), (*tail).ts = c.dlnk[0][p], k, v, now() // reuse to reduce gc
+		c.ajust(c.dlnk[0][p], p, n)                                                       // refresh to head
 		return 1
 	}
 
-	c.idx++
+	c.last++
 	if len(c.hmap) <= 0 {
-		c.jmp[0][p] = c.idx
+		c.dlnk[0][p] = c.last
 	} else {
-		c.jmp[c.jmp[0][n]][p] = c.idx
+		c.dlnk[c.dlnk[0][n]][p] = c.last
 	}
-	c.m[c.idx-1].k, c.m[c.idx-1].v, c.m[c.idx-1].ts, c.jmp[c.idx], c.hmap[k], c.jmp[0][n] = k, v, now(), [2]uint16{0, c.jmp[0][n]}, c.idx, c.idx
+	c.m[c.last-1].k, c.m[c.last-1].v, c.m[c.last-1].ts, c.dlnk[c.last], c.hmap[k], c.dlnk[0][n] = k, v, now(), [2]uint16{0, c.dlnk[0][n]}, c.last, c.last
 	return 1
 }
 
@@ -96,7 +96,7 @@ func (c *cache) del(k string) (*node, int) {
 
 // calls f sequentially for each valid item in the lru cache
 func (c *cache) walk(walker func(k string, v *interface{}, i int64, ts int64) bool) {
-	for idx := c.jmp[0][n]; idx != 0; idx = c.jmp[idx][n] {
+	for idx := c.dlnk[0][n]; idx != 0; idx = c.dlnk[idx][n] {
 		if c.m[idx-1].ts > 0 && !walker(c.m[idx-1].k, c.m[idx-1].v.v, c.m[idx-1].v.i, c.m[idx-1].ts) {
 			return
 		}
@@ -105,10 +105,9 @@ func (c *cache) walk(walker func(k string, v *interface{}, i int64, ts int64) bo
 
 // when f=0, t=1, move to head, otherwise to tail
 func (c *cache) ajust(idx, f, t uint16) {
-	if c.jmp[idx][f] == 0 { // f=0, t=1, head node, otherwise tail
-		return
+	if c.dlnk[idx][f] != 0 { // f=0, t=1, not head node, otherwise not tail
+		c.dlnk[c.dlnk[idx][t]][f], c.dlnk[c.dlnk[idx][f]][t], c.dlnk[idx][f], c.dlnk[idx][t], c.dlnk[c.dlnk[0][t]][f], c.dlnk[0][t] = c.dlnk[idx][f], c.dlnk[idx][t], 0, c.dlnk[0][t], idx, idx
 	}
-	c.jmp[c.jmp[idx][t]][f], c.jmp[c.jmp[idx][f]][t], c.jmp[idx][f], c.jmp[idx][t], c.jmp[c.jmp[0][t]][f], c.jmp[0][t] = c.jmp[idx][f], c.jmp[idx][t], 0, c.jmp[0][t], idx, idx
 }
 
 // hashCode hashes a string to a unique hashcode. BKDR hash as default
@@ -118,40 +117,39 @@ func hashCode(s string) (hash int32) {
 	}
 	return hash
 }
-func (c *Cache) new(v *interface{}, i int64) (vw *value) {
+
+func (c *Cache) alloc(v *interface{}, i int64) (val *value) {
 	of := atomic.LoadInt32(&c.f)
 	if nf := (of + 1) % bufferLen; of != atomic.LoadInt32(&c.r) && atomic.CompareAndSwapInt32(&c.f, of, nf) {
-		vw, c.ringbuf[nf] = c.ringbuf[nf], vw
+		val, c.ringbuf[nf] = c.ringbuf[nf], val
 	}
-	if vw == nil {
-		vw = &value{}
+	if val == nil { // even if get success from ringbuf, it also can be nil
+		return &value{v: v, i: i}
 	}
-	vw.v, vw.i = v, i
-	return vw
+	val.v, val.i = v, i
+	return val
 }
-func (c *Cache) free(v *value) bool {
+
+func (c *Cache) free(v **value) **value {
 	or := atomic.LoadInt32(&c.r)
 	if nr := (or + 1) % bufferLen; atomic.CompareAndSwapInt32(&c.r, or, nr) {
-		v.v, v.i, c.ringbuf[nr] = nil, 0, v
+		(*v).v, (*v).i, c.ringbuf[nr] = nil, 0, *v
 	}
-	return true
+	return v
 }
+
 func (c *Cache) get(key string, idx, level int32) (*node, int) {
 	if n, s := c.insts[idx][level].get(key); s > 0 && !((c.expiration > 0 && now()-n.ts > int64(c.expiration)) || n.ts <= 0) {
 		return n, s // not necessary to remove the expired item here, otherwise will cause GC thrashing
 	}
 	return nil, 0
 }
+
 func nextPowOf2(cap int) int {
 	if cap > 0 && cap&(cap-1) == 0 {
 		return cap
 	}
-	cap |= cap >> 1
-	cap |= cap >> 2
-	cap |= cap >> 4
-	cap |= cap >> 8
-	cap |= cap >> 16
-	return cap + 1
+	return (cap | (cap >> 1) | (cap >> 2) | (cap >> 4) | (cap >> 8) | (cap >> 16)) + 1
 }
 
 // Cache - concurrent cache structure
@@ -190,10 +188,10 @@ func (c *Cache) LRU2(capPerBkt int) *Cache {
 }
 
 // v - an interface value wrapper function for `PutV`
-func (c *Cache) V(v interface{}) *value { return c.new(&v, 0) }
+func (c *Cache) V(v interface{}) *value { return c.alloc(&v, 0) }
 
 // i - an integer value wrapper function for `PutV`
-func (c *Cache) I(i int64) *value { return c.new(nil, i) }
+func (c *Cache) I(i int64) *value { return c.alloc(nil, i) }
 
 // PutV - put a item into cache
 func (c *Cache) PutV(key string, val *value) {
@@ -213,7 +211,7 @@ func (c *Cache) Get(key string) (interface{}, bool) {
 		if v != nil {
 			return *v, b
 		}
-		return i, b // v.v is nil only when int64
+		return i, b // v.v is `nil` only when `int64` is valid
 	}
 	return nil, false
 }
