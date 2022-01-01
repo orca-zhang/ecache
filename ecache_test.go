@@ -38,7 +38,7 @@ func Test_put(t *testing.T) {
 	l.PushBack(&Elem{"2", "2"})
 
 	e := l.Front()
-	for idx := c.jmp[0][n]; idx != 0; idx = c.jmp[idx][n] {
+	for idx := c.dlnk[0][n]; idx != 0; idx = c.dlnk[idx][n] {
 		v := e.Value.(*Elem)
 		el := c.m[idx-1]
 		if el.ts <= 0 {
@@ -47,8 +47,8 @@ func Test_put(t *testing.T) {
 		if el.k != v.key {
 			t.Error("case 2.2 failed: ", el.k, v.key)
 		}
-		if (*(el.v.V)).(string) != v.val {
-			t.Error("case 2.3 failed: ", (*(el.v.V)).(string), v.val)
+		if (*(el.v.v)).(string) != v.val {
+			t.Error("case 2.3 failed: ", (*(el.v.v)).(string), v.val)
 		}
 		e = e.Next()
 	}
@@ -76,7 +76,7 @@ func Test_put(t *testing.T) {
 	rl.PushBack(&Elem{"2", "7"})
 
 	e = l.Front()
-	for idx := c.jmp[0][n]; idx != 0; idx = c.jmp[idx][n] {
+	for idx := c.dlnk[0][n]; idx != 0; idx = c.dlnk[idx][n] {
 		v := e.Value.(*Elem)
 		el := c.m[idx-1]
 		if el.ts <= 0 {
@@ -85,14 +85,14 @@ func Test_put(t *testing.T) {
 		if el.k != v.key {
 			t.Error("case 3.2 failed: ", el.k, v.key)
 		}
-		if (*(el.v.V)).(string) != v.val {
-			t.Error("case 3.3 failed: ", (*(el.v.V)).(string), v.val)
+		if (*(el.v.v)).(string) != v.val {
+			t.Error("case 3.3 failed: ", (*(el.v.v)).(string), v.val)
 		}
 		e = e.Next()
 	}
 
 	e = rl.Front()
-	for idx := c.jmp[0][p]; idx != 0; idx = c.jmp[idx][p] {
+	for idx := c.dlnk[0][p]; idx != 0; idx = c.dlnk[idx][p] {
 		v := e.Value.(*Elem)
 		el := c.m[idx-1]
 		if el.ts <= 0 {
@@ -101,8 +101,8 @@ func Test_put(t *testing.T) {
 		if el.k != v.key {
 			t.Error("case 3.4 failed: ", el.k, v.key)
 		}
-		if (*(el.v.V)).(string) != v.val {
-			t.Error("case 3.5 failed: ", (*(el.v.V)).(string), v.val)
+		if (*(el.v.v)).(string) != v.val {
+			t.Error("case 3.5 failed: ", (*(el.v.v)).(string), v.val)
 		}
 		e = e.Next()
 	}
@@ -120,7 +120,7 @@ func Test_put(t *testing.T) {
 	l.PushBack(&Elem{"3", "4"})
 
 	e = l.Front()
-	for idx := c.jmp[0][n]; idx != 0; idx = c.jmp[idx][n] {
+	for idx := c.dlnk[0][n]; idx != 0; idx = c.dlnk[idx][n] {
 		v := e.Value.(*Elem)
 		el := c.m[idx-1]
 		if el.ts <= 0 {
@@ -129,8 +129,8 @@ func Test_put(t *testing.T) {
 		if el.k != v.key {
 			t.Error("case 4.2 failed: ", el.k, v.key)
 		}
-		if (*(el.v.V)).(string) != v.val {
-			t.Error("case 4.3 failed: ", (*(el.v.V)).(string), v.val)
+		if (*(el.v.v)).(string) != v.val {
+			t.Error("case 4.3 failed: ", (*(el.v.v)).(string), v.val)
 		}
 		e = e.Next()
 	}
@@ -140,7 +140,7 @@ func Test_get(t *testing.T) {
 	c := create(2)
 	c.put("1", inst.V("1"), on, inst.free)
 	c.put("2", inst.V("2"), on, inst.free)
-	if v, _ := c.get("1"); *(v.v.V) != "1" {
+	if v, _ := c.get("1"); *(v.v.v) != "1" {
 		t.Error("case 1.1 failed")
 	}
 	c.put("3", inst.V("3"), on, inst.free)
@@ -153,14 +153,14 @@ func Test_get(t *testing.T) {
 	l.PushBack(&Elem{"1", "1"})
 
 	e := l.Front()
-	for idx := c.jmp[0][n]; idx != 0; idx = c.jmp[idx][n] {
+	for idx := c.dlnk[0][n]; idx != 0; idx = c.dlnk[idx][n] {
 		v := e.Value.(*Elem)
 		el := c.m[idx-1]
 		if el.k != v.key {
 			t.Error("case 1.3 failed: ", el.k, v.key)
 		}
-		if (*(el.v.V)).(string) != v.val {
-			t.Error("case 1.4 failed: ", (*(el.v.V)).(string), v.val)
+		if (*(el.v.v)).(string) != v.val {
+			t.Error("case 1.4 failed: ", (*(el.v.v)).(string), v.val)
 		}
 		e = e.Next()
 	}
@@ -185,7 +185,7 @@ func Test_delete(t *testing.T) {
 	}*/
 
 	e := l.Front()
-	for idx := c.jmp[0][n]; idx != 0; idx = c.jmp[idx][n] {
+	for idx := c.dlnk[0][n]; idx != 0; idx = c.dlnk[idx][n] {
 		el := c.m[idx-1]
 		if el.ts <= 0 {
 			continue
@@ -194,8 +194,8 @@ func Test_delete(t *testing.T) {
 		if el.k != v.key {
 			t.Error("case 1.2 failed: ", el.k, v.key)
 		}
-		if (*(el.v.V)).(string) != v.val {
-			t.Error("case 1.3 failed: ", (*(el.v.V)).(string), v.val)
+		if (*(el.v.v)).(string) != v.val {
+			t.Error("case 1.3 failed: ", (*(el.v.v)).(string), v.val)
 		}
 		e = e.Next()
 	}
@@ -211,7 +211,7 @@ func Test_delete(t *testing.T) {
 	}*/
 
 	e = l.Front()
-	for idx := c.jmp[0][n]; idx != 0; idx = c.jmp[idx][n] {
+	for idx := c.dlnk[0][n]; idx != 0; idx = c.dlnk[idx][n] {
 		el := c.m[idx-1]
 		if el.ts <= 0 {
 			continue
@@ -220,8 +220,8 @@ func Test_delete(t *testing.T) {
 		if el.k != v.key {
 			t.Error("case 2.2 failed: ", el.k, v.key)
 		}
-		if (*(el.v.V)).(string) != v.val {
-			t.Error("case 2.3 failed: ", (*(el.v.V)).(string), v.val)
+		if (*(el.v.v)).(string) != v.val {
+			t.Error("case 2.3 failed: ", (*(el.v.v)).(string), v.val)
 		}
 		e = e.Next()
 	}
@@ -236,7 +236,7 @@ func Test_delete(t *testing.T) {
 	}*/
 
 	e = l.Front()
-	for idx := c.jmp[0][n]; idx != 0; idx = c.jmp[idx][n] {
+	for idx := c.dlnk[0][n]; idx != 0; idx = c.dlnk[idx][n] {
 		el := c.m[idx-1]
 		if el.ts <= 0 {
 			continue
@@ -245,8 +245,8 @@ func Test_delete(t *testing.T) {
 		if el.k != v.key {
 			t.Error("case 3.2 failed: ", el.k, v.key)
 		}
-		if (*(el.v.V)).(string) != v.val {
-			t.Error("case 3.3 failed: ", (*(el.v.V)).(string), v.val)
+		if (*(el.v.v)).(string) != v.val {
+			t.Error("case 3.3 failed: ", (*(el.v.v)).(string), v.val)
 		}
 		e = e.Next()
 	}
