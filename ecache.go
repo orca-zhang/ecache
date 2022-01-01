@@ -45,9 +45,10 @@ func create(cap int) *cache {
 }
 
 // put a cache item into lru cache, if added return 1, updated return 0
-func (c *cache) put(k string, v *value, on inspector, free func(v **value) **value) int {
+func (c *cache) put(k string, v *value, on inspector, free func(v *value)) int {
 	if x, ok := c.hmap[k]; ok {
-		*(free(&c.m[x-1].v)), c.m[x-1].ts = v, now()
+		free(c.m[x-1].v)
+		c.m[x-1].v, c.m[x-1].ts = v, now()
 		c.ajust(x, p, n) // refresh to head
 		return 0
 	}
@@ -58,8 +59,9 @@ func (c *cache) put(k string, v *value, on inspector, free func(v **value) **val
 			on(PUT, (*tail).k, (*tail).v.v, (*tail).v.i, -1)
 		}
 		delete(c.hmap, (*tail).k)
-		c.hmap[k], (*tail).k, *(free(&(*tail).v)), (*tail).ts = c.dlnk[0][p], k, v, now() // reuse to reduce gc
-		c.ajust(c.dlnk[0][p], p, n)                                                       // refresh to head
+		free((*tail).v)
+		c.hmap[k], (*tail).k, (*tail).v, (*tail).ts = c.dlnk[0][p], k, v, now() // reuse to reduce gc
+		c.ajust(c.dlnk[0][p], p, n)                                             // refresh to head
 		return 1
 	}
 
@@ -130,12 +132,11 @@ func (c *Cache) alloc(v *interface{}, i int64) (val *value) {
 	return val
 }
 
-func (c *Cache) free(v **value) **value {
+func (c *Cache) free(v *value) {
 	or := atomic.LoadInt32(&c.r)
 	if nr := (or + 1) % bufferLen; atomic.CompareAndSwapInt32(&c.r, or, nr) {
-		(*v).v, (*v).i, c.ringbuf[nr] = nil, 0, *v
+		v.v, v.i, c.ringbuf[nr] = nil, 0, v
 	}
-	return v
 }
 
 func (c *Cache) get(key string, idx, level int32) (*node, int) {
