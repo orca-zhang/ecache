@@ -26,9 +26,9 @@ func Test_create(t *testing.T) {
 
 func Test_put(t *testing.T) {
 	c := create(5)
-	c.put("1", inst.V("1"), on, inst.free)
-	c.put("2", inst.V("2"), on, inst.free)
-	c.put("1", inst.V("3"), on, inst.free)
+	c.put("1", inst.V("1"), on)
+	c.put("2", inst.V("2"), on)
+	c.put("1", inst.V("3"), on)
 	if len(c.hmap) != 2 {
 		t.Error("case 2.1 failed")
 	}
@@ -53,10 +53,10 @@ func Test_put(t *testing.T) {
 		e = e.Next()
 	}
 
-	c.put("3", inst.V("4"), on, inst.free)
-	c.put("4", inst.V("5"), on, inst.free)
-	c.put("5", inst.V("6"), on, inst.free)
-	c.put("2", inst.V("7"), on, inst.free)
+	c.put("3", inst.V("4"), on)
+	c.put("4", inst.V("5"), on)
+	c.put("5", inst.V("6"), on)
+	c.put("2", inst.V("7"), on)
 	if len(c.hmap) != 5 {
 		t.Error("case 3.1 failed")
 	}
@@ -107,7 +107,7 @@ func Test_put(t *testing.T) {
 		e = e.Next()
 	}
 
-	c.put("6", inst.V("8"), on, inst.free)
+	c.put("6", inst.V("8"), on)
 	if len(c.hmap) != 5 {
 		t.Error("case 4.1 failed")
 	}
@@ -138,12 +138,12 @@ func Test_put(t *testing.T) {
 
 func Test_get(t *testing.T) {
 	c := create(2)
-	c.put("1", inst.V("1"), on, inst.free)
-	c.put("2", inst.V("2"), on, inst.free)
+	c.put("1", inst.V("1"), on)
+	c.put("2", inst.V("2"), on)
 	if v, _ := c.get("1"); *(v.v.v) != "1" {
 		t.Error("case 1.1 failed")
 	}
-	c.put("3", inst.V("3"), on, inst.free)
+	c.put("3", inst.V("3"), on)
 	if len(c.hmap) != 2 {
 		t.Error("case 1.2 failed")
 	}
@@ -168,11 +168,11 @@ func Test_get(t *testing.T) {
 
 func Test_delete(t *testing.T) {
 	c := create(5)
-	c.put("3", inst.V("4"), on, inst.free)
-	c.put("4", inst.V("5"), on, inst.free)
-	c.put("5", inst.V("6"), on, inst.free)
-	c.put("2", inst.V("7"), on, inst.free)
-	c.put("6", inst.V("8"), on, inst.free)
+	c.put("3", inst.V("4"), on)
+	c.put("4", inst.V("5"), on)
+	c.put("5", inst.V("6"), on)
+	c.put("2", inst.V("7"), on)
+	c.put("6", inst.V("8"), on)
 	c.del("5")
 
 	l := list.New()
@@ -254,11 +254,11 @@ func Test_delete(t *testing.T) {
 
 func Test_walk(t *testing.T) {
 	c := create(5)
-	c.put("3", inst.I(4), on, inst.free)
-	c.put("4", inst.I(5), on, inst.free)
-	c.put("5", inst.I(6), on, inst.free)
-	c.put("2", inst.I(7), on, inst.free)
-	c.put("6", inst.I(8), on, inst.free)
+	c.put("3", inst.I(4), on)
+	c.put("4", inst.I(5), on)
+	c.put("5", inst.I(6), on)
+	c.put("2", inst.I(7), on)
+	c.put("6", inst.I(8), on)
 
 	l := list.New()
 	l.PushBack(&Elem{"6", "8"})
