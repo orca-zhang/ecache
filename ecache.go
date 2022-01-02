@@ -29,25 +29,24 @@ type value struct {
 
 type node struct {
 	k  string
-	v  *value
+	v  value
 	ts int64 // nano timestamp
 }
 
 type cache struct {
 	dlnk [][2]uint16       // double link list, 0 for prev, 1 for next, the first node stands for [tail, head]
 	m    []node            // memory pre-allocated
-	last uint16            // last element index when not full
 	hmap map[string]uint16 // key -> idx in []node
+	last uint16            // last element index when not full
 }
 
 func create(cap int) *cache {
-	return &cache{make([][2]uint16, cap+1), make([]node, cap), 0, make(map[string]uint16, cap)}
+	return &cache{make([][2]uint16, cap+1), make([]node, cap), make(map[string]uint16, cap), 0}
 }
 
 // put a cache item into lru cache, if added return 1, updated return 0
-func (c *cache) put(k string, v *value, on inspector, free func(v *value)) int {
+func (c *cache) put(k string, v value, on inspector) int {
 	if x, ok := c.hmap[k]; ok {
-		free(c.m[x-1].v)
 		c.m[x-1].v, c.m[x-1].ts = v, now()
 		c.ajust(x, p, n) // refresh to head
 		return 0
@@ -59,7 +58,6 @@ func (c *cache) put(k string, v *value, on inspector, free func(v *value)) int {
 			on(PUT, (*tail).k, (*tail).v.v, (*tail).v.i, -1)
 		}
 		delete(c.hmap, (*tail).k)
-		free((*tail).v)
 		c.hmap[k], (*tail).k, (*tail).v, (*tail).ts = c.dlnk[0][p], k, v, now() // reuse to reduce gc
 		c.ajust(c.dlnk[0][p], p, n)                                             // refresh to head
 		return 1
@@ -120,25 +118,6 @@ func hashCode(s string) (hash int32) {
 	return hash
 }
 
-func (c *Cache) alloc(v *interface{}, i int64) (val *value) {
-	of := atomic.LoadInt32(&c.f)
-	if nf := (of + 1) % bufferLen; of != atomic.LoadInt32(&c.r) && atomic.CompareAndSwapInt32(&c.f, of, nf) {
-		val, c.ringbuf[nf] = c.ringbuf[nf], val
-	}
-	if val == nil { // even if get success from ringbuf, it also can be nil
-		return &value{v: v, i: i}
-	}
-	val.v, val.i = v, i
-	return val
-}
-
-func (c *Cache) free(v *value) {
-	or := atomic.LoadInt32(&c.r)
-	if nr := (or + 1) % bufferLen; atomic.CompareAndSwapInt32(&c.r, or, nr) {
-		v.v, v.i, c.ringbuf[nr] = nil, 0, v
-	}
-}
-
 func (c *Cache) get(key string, idx, level int32) (*node, int) {
 	if n, s := c.insts[idx][level].get(key); s > 0 && !((c.expiration > 0 && now()-n.ts > int64(c.expiration)) || n.ts <= 0) {
 		return n, s // not necessary to remove the expired item here, otherwise will cause GC thrashing
@@ -157,10 +136,9 @@ func nextPowOf2(cap int) int {
 type Cache struct {
 	locks      []sync.Mutex
 	insts      [][2]*cache // level-0 for normal LRU, level-1 for LRU-2
-	ringbuf    []*value
-	f, r, mask int32 // front & rear of ringbuf
 	expiration time.Duration
 	on         inspector
+	mask       int32
 }
 
 // NewLRUCache - create lru cache
@@ -169,7 +147,7 @@ type Cache struct {
 // optional `expiration` is item alive time (and we only use lazy eviction here), default `0` stands for permanent
 func NewLRUCache(bucketCnt int, capPerBkt int, expiration ...time.Duration) *Cache {
 	size := nextPowOf2(bucketCnt)
-	c := &Cache{make([]sync.Mutex, size), make([][2]*cache, size), make([]*value, bufferLen), int32(0), int32(0), int32(size - 1), 0, func(int, string, *interface{}, int64, int) {}}
+	c := &Cache{make([]sync.Mutex, size), make([][2]*cache, size), 0, func(int, string, *interface{}, int64, int) {}, int32(size - 1)}
 	for i := range c.insts {
 		c.insts[i][0] = create(capPerBkt)
 	}
@@ -189,16 +167,16 @@ func (c *Cache) LRU2(capPerBkt int) *Cache {
 }
 
 // v - an interface value wrapper function for `PutV`
-func (c *Cache) V(v interface{}) *value { return c.alloc(&v, 0) }
+func (c *Cache) V(v interface{}) value { return value{&v, 0} }
 
 // i - an integer value wrapper function for `PutV`
-func (c *Cache) I(i int64) *value { return c.alloc(nil, i) }
+func (c *Cache) I(i int64) value { return value{nil, i} }
 
 // PutV - put a item into cache
-func (c *Cache) PutV(key string, val *value) {
+func (c *Cache) PutV(key string, val value) {
 	idx := hashCode(key) & c.mask
 	c.locks[idx].Lock()
-	status := c.insts[idx][0].put(key, val, c.on, c.free)
+	status := c.insts[idx][0].put(key, val, c.on)
 	c.locks[idx].Unlock()
 	c.on(PUT, key, val.v, val.i, status)
 }
@@ -229,7 +207,7 @@ func (c *Cache) GetV(key string) (*interface{}, int64, bool) {
 		if s <= 0 {
 			n, s = c.get(key, idx, 1) // re-find in level-1
 		} else {
-			c.insts[idx][1].put(key, n.v, c.on, c.free) // find in level-0, move to level-1
+			c.insts[idx][1].put(key, n.v, c.on) // find in level-0, move to level-1
 		}
 	}
 	c.locks[idx].Unlock()
