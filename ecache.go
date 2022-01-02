@@ -6,7 +6,7 @@ import (
 	"time"
 )
 
-var clock, p, n, bufferLen = time.Now().UnixNano(), uint16(0), uint16(1), int32(1000)
+var clock, p, n = time.Now().UnixNano(), uint32(0), uint32(1)
 
 func now() int64 { return atomic.LoadInt64(&clock) }
 func init() {
@@ -34,14 +34,14 @@ type node struct {
 }
 
 type cache struct {
-	dlnk [][2]uint16       // double link list, 0 for prev, 1 for next, the first node stands for [tail, head]
+	dlnk [][2]uint32       // double link list, 0 for prev, 1 for next, the first node stands for [tail, head]
 	m    []node            // memory pre-allocated
-	hmap map[string]uint16 // key -> idx in []node
-	last uint16            // last element index when not full
+	hmap map[string]uint32 // key -> idx in []node
+	last uint32            // last element index when not full
 }
 
-func create(cap int) *cache {
-	return &cache{make([][2]uint16, cap+1), make([]node, cap), make(map[string]uint16, cap), 0}
+func create(cap uint32) *cache {
+	return &cache{make([][2]uint32, cap+1), make([]node, cap), make(map[string]uint32, cap), 0}
 }
 
 // put a cache item into lru cache, if added return 1, updated return 0
@@ -52,7 +52,7 @@ func (c *cache) put(k string, v value, on inspector) int {
 		return 0
 	}
 
-	if c.last == uint16(cap(c.m)) {
+	if c.last == uint32(cap(c.m)) {
 		tail := &c.m[c.dlnk[0][p]-1]
 		if (*tail).ts > 0 { // do not notify for mark delete ones
 			on(PUT, (*tail).k, (*tail).v.v, (*tail).v.i, -1)
@@ -69,7 +69,7 @@ func (c *cache) put(k string, v value, on inspector) int {
 	} else {
 		c.dlnk[c.dlnk[0][n]][p] = c.last
 	}
-	c.m[c.last-1].k, c.m[c.last-1].v, c.m[c.last-1].ts, c.dlnk[c.last], c.hmap[k], c.dlnk[0][n] = k, v, now(), [2]uint16{0, c.dlnk[0][n]}, c.last, c.last
+	c.m[c.last-1].k, c.m[c.last-1].v, c.m[c.last-1].ts, c.dlnk[c.last], c.hmap[k], c.dlnk[0][n] = k, v, now(), [2]uint32{0, c.dlnk[0][n]}, c.last, c.last
 	return 1
 }
 
@@ -104,7 +104,7 @@ func (c *cache) walk(walker func(k string, v *interface{}, i int64, ts int64) bo
 }
 
 // when f=0, t=1, move to head, otherwise to tail
-func (c *cache) ajust(idx, f, t uint16) {
+func (c *cache) ajust(idx, f, t uint32) {
 	if c.dlnk[idx][f] != 0 { // f=0, t=1, not head node, otherwise not tail
 		c.dlnk[c.dlnk[idx][t]][f], c.dlnk[c.dlnk[idx][f]][t], c.dlnk[idx][f], c.dlnk[idx][t], c.dlnk[c.dlnk[0][t]][f], c.dlnk[0][t] = c.dlnk[idx][f], c.dlnk[idx][t], 0, c.dlnk[0][t], idx, idx
 	}
@@ -125,7 +125,7 @@ func (c *Cache) get(key string, idx, level int32) (*node, int) {
 	return nil, 0
 }
 
-func nextPowOf2(cap int) int {
+func nextPowOf2(cap uint32) uint32 {
 	if cap > 0 && cap&(cap-1) == 0 {
 		return cap
 	}
@@ -145,7 +145,7 @@ type Cache struct {
 // `bucketCnt` is buckets that shard items to reduce lock racing
 // `capPerBkt` is length of each bucket, can store `capPerBkt * bucketCnt` count of items in Cache at most
 // optional `expiration` is item alive time (and we only use lazy eviction here), default `0` stands for permanent
-func NewLRUCache(bucketCnt int, capPerBkt int, expiration ...time.Duration) *Cache {
+func NewLRUCache(bucketCnt, capPerBkt uint32, expiration ...time.Duration) *Cache {
 	size := nextPowOf2(bucketCnt)
 	c := &Cache{make([]sync.Mutex, size), make([][2]*cache, size), 0, func(int, string, *interface{}, int64, int) {}, int32(size - 1)}
 	for i := range c.insts {
@@ -159,7 +159,7 @@ func NewLRUCache(bucketCnt int, capPerBkt int, expiration ...time.Duration) *Cac
 
 // LRU2 - add LRU-2 support (especially LRU-2 that when item visited twice it moves to upper-level-cache)
 // `capPerBkt` is length of each LRU-2 bucket, can store extra `capPerBkt * bucketCnt` count of items in Cache at most
-func (c *Cache) LRU2(capPerBkt int) *Cache {
+func (c *Cache) LRU2(capPerBkt uint32) *Cache {
 	for i := range c.insts {
 		c.insts[i][1] = create(capPerBkt)
 	}
