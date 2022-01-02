@@ -254,11 +254,11 @@ func Test_delete(t *testing.T) {
 
 func Test_walk(t *testing.T) {
 	c := create(5)
-	c.put("3", inst.V("4"), on, inst.free)
-	c.put("4", inst.V("5"), on, inst.free)
-	c.put("5", inst.V("6"), on, inst.free)
-	c.put("2", inst.V("7"), on, inst.free)
-	c.put("6", inst.V("8"), on, inst.free)
+	c.put("3", inst.I(4), on, inst.free)
+	c.put("4", inst.I(5), on, inst.free)
+	c.put("5", inst.I(6), on, inst.free)
+	c.put("2", inst.I(7), on, inst.free)
+	c.put("6", inst.I(8), on, inst.free)
 
 	l := list.New()
 	l.PushBack(&Elem{"6", "8"})
@@ -269,13 +269,13 @@ func Test_walk(t *testing.T) {
 
 	e := l.Front()
 	c.walk(
-		func(key string, val *interface{}, _ int64, ts int64) bool {
+		func(key string, _ *interface{}, i int64, ts int64) bool {
 			v := e.Value.(*Elem)
 			if key != v.key {
 				t.Error("case 1.1 failed: ", key, v.key)
 			}
-			if (*val).(string) != v.val {
-				t.Error("case 1.2 failed: ", (*val).(string), v.val)
+			if fmt.Sprint(i) != v.val {
+				t.Error("case 1.2 failed: ", i, v.val)
 			}
 			e = e.Next()
 			return true
@@ -287,13 +287,13 @@ func Test_walk(t *testing.T) {
 
 	e = l.Front()
 	c.walk(
-		func(key string, val *interface{}, _ int64, ts int64) bool {
+		func(key string, _ *interface{}, i int64, ts int64) bool {
 			v := e.Value.(*Elem)
 			if key != v.key {
 				t.Error("case 1.1 failed: ", key, v.key)
 			}
-			if (*val).(string) != v.val {
-				t.Error("case 1.2 failed: ", (*val).(string), v.val)
+			if fmt.Sprint(i) != v.val {
+				t.Error("case 1.2 failed: ", i, v.val)
 			}
 			return false
 		})
