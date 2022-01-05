@@ -24,6 +24,7 @@ func init() {
 
 type value struct {
 	v *interface{}
+	b []byte
 	i int64
 }
 
@@ -166,11 +167,14 @@ func (c *Cache) LRU2(capPerBkt uint32) *Cache {
 	return c
 }
 
-// v - an interface value wrapper function for `PutV`
-func (c *Cache) V(v interface{}) value { return value{&v, 0} }
+// V - an interface value wrapper function for `PutV`
+func (c *Cache) V(v interface{}) value { return value{&v, nil, 0} }
 
-// i - an integer value wrapper function for `PutV`
-func (c *Cache) I(i int64) value { return value{nil, i} }
+// I - an integer value wrapper function for `PutV`
+func (c *Cache) I(i int64) value { return value{nil, nil, i} }
+
+// B - a byte slice value wrapper function for `PutV`
+func (c *Cache) B(b []byte) value { return value{nil, b, 0} }
 
 // PutV - put a item into cache
 func (c *Cache) PutV(key string, val value) {
