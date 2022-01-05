@@ -195,21 +195,21 @@ func (c *Cache) Put(key string, val interface{}) { c.PutV(key, c.I(val)) }
 
 // Get - get value of key from cache with result
 func (c *Cache) Get(key string) (interface{}, bool) {
-	if v, b := c.GetV(key); b {
-		switch v.Kind {
+	if k, i, b, d, ok := c.GetV(key); ok {
+		switch k {
 		case IFACE:
-			return *v.I, true
+			return *i, true
 		case BYTES:
-			return v.B, true
+			return b, true
 		case DIGIT:
-			return v.D, true
+			return d, true
 		}
 	}
 	return nil, false
 }
 
 // GetV - get value of key from cache with result
-func (c *Cache) GetV(key string) (v Value, _ bool) {
+func (c *Cache) GetV(key string) (k int8, i *interface{}, b []byte, d int64, _ bool) {
 	idx := hashCode(key) & c.mask
 	c.locks[idx].Lock()
 	n, s := (*node)(nil), 0
@@ -228,10 +228,10 @@ func (c *Cache) GetV(key string) (v Value, _ bool) {
 		c.on(GET, key, nil, 0)
 		return
 	}
-	v.I, v.B, v.D = n.v.I, n.v.B, n.v.D
+	c.on(GET, key, &n.v, 1)
+	k, i, b, d = n.v.Kind, n.v.I, n.v.B, n.v.D
 	c.locks[idx].Unlock()
-	c.on(GET, key, &v, 1)
-	return v, true
+	return k, i, b, d, true
 }
 
 // Del - delete item by key from cache
