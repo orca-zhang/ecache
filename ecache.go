@@ -30,10 +30,10 @@ const (
 )
 
 type Value struct {
-	Kind int8
 	I    *interface{}
 	B    []byte
 	D    int64
+	Kind int8
 }
 
 type node struct {
@@ -173,13 +173,13 @@ func (c *Cache) LRU2(capPerBkt uint32) *Cache {
 }
 
 // I - an interface value wrapper function for `PutV`
-func (c *Cache) I(i interface{}) Value { return Value{IFACE, &i, nil, 0} }
+func (c *Cache) I(i interface{}) Value { return Value{&i, nil, 0, IFACE} }
 
 // D - a digital value wrapper function for `PutV`
-func (c *Cache) D(d int64) Value { return Value{DIGIT, nil, nil, d} }
+func (c *Cache) D(d int64) Value { return Value{nil, nil, d, DIGIT} }
 
 // B - a byte slice value wrapper function for `PutV`
-func (c *Cache) B(b []byte) Value { return Value{BYTES, nil, b, 0} }
+func (c *Cache) B(b []byte) Value { return Value{nil, b, 0, BYTES} }
 
 // PutV - put a item into cache
 func (c *Cache) PutV(key string, val Value) {
