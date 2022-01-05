@@ -23,15 +23,22 @@ func init() {
 	}()
 }
 
-type value struct {
-	v *interface{}
-	b []byte
-	i int64
+const (
+	IFACE = iota
+	BYTES
+	DIGIT
+)
+
+type Value struct {
+	Kind int8
+	I    *interface{}
+	B    []byte
+	D    int64
 }
 
 type node struct {
 	k  string
-	v  value
+	v  Value
 	ts int64 // nano timestamp
 }
 
@@ -47,7 +54,7 @@ func create(cap uint32) *cache {
 }
 
 // put a cache item into lru cache, if added return 1, updated return 0
-func (c *cache) put(k string, v value, on inspector) int {
+func (c *cache) put(k string, v Value, on inspector) int {
 	if x, ok := c.hmap[k]; ok {
 		c.m[x-1].v, c.m[x-1].ts = v, now()
 		c.ajust(x, p, n) // refresh to head
@@ -57,7 +64,7 @@ func (c *cache) put(k string, v value, on inspector) int {
 	if c.last == uint32(cap(c.m)) {
 		tail := &c.m[c.dlnk[0][p]-1]
 		if (*tail).ts > 0 { // do not notify for mark delete ones
-			on(PUT, (*tail).k, (*tail).v.v, (*tail).v.i, -1)
+			on(PUT, (*tail).k, &(*tail).v, -1)
 		}
 		delete(c.hmap, (*tail).k)
 		c.hmap[k], (*tail).k, (*tail).v, (*tail).ts = c.dlnk[0][p], k, v, now() // reuse to reduce gc
@@ -97,9 +104,9 @@ func (c *cache) del(k string) (*node, int) {
 }
 
 // calls f sequentially for each valid item in the lru cache
-func (c *cache) walk(walker func(k string, v *interface{}, i int64, ts int64) bool) {
+func (c *cache) walk(walker func(k string, v *Value, ts int64) bool) {
 	for idx := c.dlnk[0][n]; idx != 0; idx = c.dlnk[idx][n] {
-		if c.m[idx-1].ts > 0 && !walker(c.m[idx-1].k, c.m[idx-1].v.v, c.m[idx-1].v.i, c.m[idx-1].ts) {
+		if c.m[idx-1].ts > 0 && !walker(c.m[idx-1].k, &c.m[idx-1].v, c.m[idx-1].ts) {
 			return
 		}
 	}
@@ -112,7 +119,7 @@ func (c *cache) ajust(idx, f, t uint32) {
 	}
 }
 
-// hashCode hashes a string to a unique hashcode. BKDR hash as default
+// hashCode hashes a string to a unique hashcode.
 func hashCode(s string) (hash int32) {
 	return int32(xxhash.Sum64([]byte(s)))
 }
@@ -146,7 +153,7 @@ type Cache struct {
 // optional `expiration` is item alive time (and we only use lazy eviction here), default `0` stands for permanent
 func NewLRUCache(bucketCnt, capPerBkt uint32, expiration ...time.Duration) *Cache {
 	size := nextPowOf2(bucketCnt)
-	c := &Cache{make([]sync.Mutex, size), make([][2]*cache, size), 0, func(int, string, *interface{}, int64, int) {}, int32(size - 1)}
+	c := &Cache{make([]sync.Mutex, size), make([][2]*cache, size), 0, func(int, string, *Value, int) {}, int32(size - 1)}
 	for i := range c.insts {
 		c.insts[i][0] = create(capPerBkt)
 	}
@@ -165,40 +172,44 @@ func (c *Cache) LRU2(capPerBkt uint32) *Cache {
 	return c
 }
 
-// V - an interface value wrapper function for `PutV`
-func (c *Cache) V(v interface{}) value { return value{&v, nil, 0} }
+// I - an interface value wrapper function for `PutV`
+func (c *Cache) I(i interface{}) Value { return Value{IFACE, &i, nil, 0} }
 
-// I - an integer value wrapper function for `PutV`
-func (c *Cache) I(i int64) value { return value{nil, nil, i} }
+// D - a digital value wrapper function for `PutV`
+func (c *Cache) D(d int64) Value { return Value{DIGIT, nil, nil, d} }
 
 // B - a byte slice value wrapper function for `PutV`
-func (c *Cache) B(b []byte) value { return value{nil, b, 0} }
+func (c *Cache) B(b []byte) Value { return Value{BYTES, nil, b, 0} }
 
 // PutV - put a item into cache
-func (c *Cache) PutV(key string, val value) {
+func (c *Cache) PutV(key string, val Value) {
 	idx := hashCode(key) & c.mask
 	c.locks[idx].Lock()
 	status := c.insts[idx][0].put(key, val, c.on)
 	c.locks[idx].Unlock()
-	c.on(PUT, key, val.v, val.i, status)
+	c.on(PUT, key, &val, status)
 }
 
 // Put - put a item into cache
-func (c *Cache) Put(key string, val interface{}) { c.PutV(key, c.V(val)) }
+func (c *Cache) Put(key string, val interface{}) { c.PutV(key, c.I(val)) }
 
 // Get - get value of key from cache with result
 func (c *Cache) Get(key string) (interface{}, bool) {
-	if v, i, b := c.GetV(key); b {
-		if v != nil {
-			return *v, b
+	if v, b := c.GetV(key); b {
+		switch v.Kind {
+		case IFACE:
+			return *v.I, true
+		case BYTES:
+			return v.B, true
+		case DIGIT:
+			return v.D, true
 		}
-		return i, b // v.v is `nil` only when `int64` is valid
 	}
 	return nil, false
 }
 
 // GetV - get value of key from cache with result
-func (c *Cache) GetV(key string) (*interface{}, int64, bool) {
+func (c *Cache) GetV(key string) (Value, bool) {
 	idx := hashCode(key) & c.mask
 	c.locks[idx].Lock()
 	n, s := (*node)(nil), 0
@@ -212,13 +223,15 @@ func (c *Cache) GetV(key string) (*interface{}, int64, bool) {
 			c.insts[idx][1].put(key, n.v, c.on) // find in level-0, move to level-1
 		}
 	}
-	c.locks[idx].Unlock()
 	if s <= 0 {
-		c.on(GET, key, nil, 0, 0)
-		return nil, 0, false
+		c.locks[idx].Unlock()
+		c.on(GET, key, nil, 0)
+		return Value{}, false
 	}
-	c.on(GET, key, n.v.v, n.v.i, 1)
-	return n.v.v, n.v.i, true
+	v := n.v
+	c.locks[idx].Unlock()
+	c.on(GET, key, &v, 1)
+	return v, true
 }
 
 // Del - delete item by key from cache
@@ -233,16 +246,16 @@ func (c *Cache) Del(key string) {
 		}
 	}
 	if s > 0 {
-		c.on(DEL, key, n.v.v, n.v.i, 1)
-		n.v.v = nil // release first
+		c.on(DEL, key, &n.v, 1)
+		n.v.I = nil // release first
 	} else {
-		c.on(DEL, key, nil, 0, 0)
+		c.on(DEL, key, nil, 0)
 	}
 	c.locks[idx].Unlock()
 }
 
 // Walk - calls f sequentially for each valid item in the lru cache, return false to stop iteration for every bucket
-func (c *Cache) Walk(walker func(k string, v *interface{}, i int64, ts int64) bool) {
+func (c *Cache) Walk(walker func(k string, v *Value, ts int64) bool) {
 	for i := range c.insts {
 		c.locks[i].Lock()
 		c.insts[i][0].walk(walker)
@@ -264,13 +277,13 @@ const (
 //   `action`:GET, `status`: miss=0, hit=1
 //   `action`:DEL, `status`: miss=0, hit=1
 //   `value` only valid when `status` is not 0 or `action` is PUT
-type inspector func(action int, key string, value *interface{}, i int64, status int)
+type inspector func(action int, key string, value *Value, status int)
 
 // Inspect - to inspect the actions
 func (c *Cache) Inspect(insptr inspector) {
 	old := c.on
-	c.on = func(action int, key string, value *interface{}, i int64, status int) {
-		old(action, key, value, i, status) // call as the declared order, old first
-		insptr(action, key, value, i, status)
+	c.on = func(action int, key string, value *Value, status int) {
+		old(action, key, value, status) // call as the declared order, old first
+		insptr(action, key, value, status)
 	}
 }

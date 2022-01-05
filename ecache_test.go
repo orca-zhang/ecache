@@ -8,7 +8,7 @@ import (
 	"time"
 )
 
-var on = func(int, string, *interface{}, int64, int) {}
+var on = func(int, string, *Value, int) {}
 
 var inst = NewLRUCache(1, 1, time.Second)
 
@@ -26,9 +26,9 @@ func Test_create(t *testing.T) {
 
 func Test_put(t *testing.T) {
 	c := create(5)
-	c.put("1", inst.V("1"), on)
-	c.put("2", inst.V("2"), on)
-	c.put("1", inst.V("3"), on)
+	c.put("1", inst.I("1"), on)
+	c.put("2", inst.I("2"), on)
+	c.put("1", inst.I("3"), on)
 	if len(c.hmap) != 2 {
 		t.Error("case 2.1 failed")
 	}
@@ -47,16 +47,16 @@ func Test_put(t *testing.T) {
 		if el.k != v.key {
 			t.Error("case 2.2 failed: ", el.k, v.key)
 		}
-		if (*(el.v.v)).(string) != v.val {
-			t.Error("case 2.3 failed: ", (*(el.v.v)).(string), v.val)
+		if (*(el.v.I)).(string) != v.val {
+			t.Error("case 2.3 failed: ", (*(el.v.I)).(string), v.val)
 		}
 		e = e.Next()
 	}
 
-	c.put("3", inst.V("4"), on)
-	c.put("4", inst.V("5"), on)
-	c.put("5", inst.V("6"), on)
-	c.put("2", inst.V("7"), on)
+	c.put("3", inst.I("4"), on)
+	c.put("4", inst.I("5"), on)
+	c.put("5", inst.I("6"), on)
+	c.put("2", inst.I("7"), on)
 	if len(c.hmap) != 5 {
 		t.Error("case 3.1 failed")
 	}
@@ -85,8 +85,8 @@ func Test_put(t *testing.T) {
 		if el.k != v.key {
 			t.Error("case 3.2 failed: ", el.k, v.key)
 		}
-		if (*(el.v.v)).(string) != v.val {
-			t.Error("case 3.3 failed: ", (*(el.v.v)).(string), v.val)
+		if (*(el.v.I)).(string) != v.val {
+			t.Error("case 3.3 failed: ", (*(el.v.I)).(string), v.val)
 		}
 		e = e.Next()
 	}
@@ -101,13 +101,13 @@ func Test_put(t *testing.T) {
 		if el.k != v.key {
 			t.Error("case 3.4 failed: ", el.k, v.key)
 		}
-		if (*(el.v.v)).(string) != v.val {
-			t.Error("case 3.5 failed: ", (*(el.v.v)).(string), v.val)
+		if (*(el.v.I)).(string) != v.val {
+			t.Error("case 3.5 failed: ", (*(el.v.I)).(string), v.val)
 		}
 		e = e.Next()
 	}
 
-	c.put("6", inst.V("8"), on)
+	c.put("6", inst.I("8"), on)
 	if len(c.hmap) != 5 {
 		t.Error("case 4.1 failed")
 	}
@@ -129,8 +129,8 @@ func Test_put(t *testing.T) {
 		if el.k != v.key {
 			t.Error("case 4.2 failed: ", el.k, v.key)
 		}
-		if (*(el.v.v)).(string) != v.val {
-			t.Error("case 4.3 failed: ", (*(el.v.v)).(string), v.val)
+		if (*(el.v.I)).(string) != v.val {
+			t.Error("case 4.3 failed: ", (*(el.v.I)).(string), v.val)
 		}
 		e = e.Next()
 	}
@@ -138,12 +138,12 @@ func Test_put(t *testing.T) {
 
 func Test_get(t *testing.T) {
 	c := create(2)
-	c.put("1", inst.V("1"), on)
-	c.put("2", inst.V("2"), on)
-	if v, _ := c.get("1"); *(v.v.v) != "1" {
+	c.put("1", inst.I("1"), on)
+	c.put("2", inst.I("2"), on)
+	if v, _ := c.get("1"); *(v.v.I) != "1" {
 		t.Error("case 1.1 failed")
 	}
-	c.put("3", inst.V("3"), on)
+	c.put("3", inst.I("3"), on)
 	if len(c.hmap) != 2 {
 		t.Error("case 1.2 failed")
 	}
@@ -159,8 +159,8 @@ func Test_get(t *testing.T) {
 		if el.k != v.key {
 			t.Error("case 1.3 failed: ", el.k, v.key)
 		}
-		if (*(el.v.v)).(string) != v.val {
-			t.Error("case 1.4 failed: ", (*(el.v.v)).(string), v.val)
+		if (*(el.v.I)).(string) != v.val {
+			t.Error("case 1.4 failed: ", (*(el.v.I)).(string), v.val)
 		}
 		e = e.Next()
 	}
@@ -168,11 +168,11 @@ func Test_get(t *testing.T) {
 
 func Test_delete(t *testing.T) {
 	c := create(5)
-	c.put("3", inst.V("4"), on)
-	c.put("4", inst.V("5"), on)
-	c.put("5", inst.V("6"), on)
-	c.put("2", inst.V("7"), on)
-	c.put("6", inst.V("8"), on)
+	c.put("3", inst.I("4"), on)
+	c.put("4", inst.I("5"), on)
+	c.put("5", inst.I("6"), on)
+	c.put("2", inst.I("7"), on)
+	c.put("6", inst.I("8"), on)
 	c.del("5")
 
 	l := list.New()
@@ -194,8 +194,8 @@ func Test_delete(t *testing.T) {
 		if el.k != v.key {
 			t.Error("case 1.2 failed: ", el.k, v.key)
 		}
-		if (*(el.v.v)).(string) != v.val {
-			t.Error("case 1.3 failed: ", (*(el.v.v)).(string), v.val)
+		if (*(el.v.I)).(string) != v.val {
+			t.Error("case 1.3 failed: ", (*(el.v.I)).(string), v.val)
 		}
 		e = e.Next()
 	}
@@ -220,8 +220,8 @@ func Test_delete(t *testing.T) {
 		if el.k != v.key {
 			t.Error("case 2.2 failed: ", el.k, v.key)
 		}
-		if (*(el.v.v)).(string) != v.val {
-			t.Error("case 2.3 failed: ", (*(el.v.v)).(string), v.val)
+		if (*(el.v.I)).(string) != v.val {
+			t.Error("case 2.3 failed: ", (*(el.v.I)).(string), v.val)
 		}
 		e = e.Next()
 	}
@@ -245,8 +245,8 @@ func Test_delete(t *testing.T) {
 		if el.k != v.key {
 			t.Error("case 3.2 failed: ", el.k, v.key)
 		}
-		if (*(el.v.v)).(string) != v.val {
-			t.Error("case 3.3 failed: ", (*(el.v.v)).(string), v.val)
+		if (*(el.v.I)).(string) != v.val {
+			t.Error("case 3.3 failed: ", (*(el.v.I)).(string), v.val)
 		}
 		e = e.Next()
 	}
@@ -269,13 +269,13 @@ func Test_walk(t *testing.T) {
 
 	e := l.Front()
 	c.walk(
-		func(key string, _ *interface{}, i int64, ts int64) bool {
+		func(key string, val *Value, ts int64) bool {
 			v := e.Value.(*Elem)
 			if key != v.key {
 				t.Error("case 1.1 failed: ", key, v.key)
 			}
-			if fmt.Sprint(i) != v.val {
-				t.Error("case 1.2 failed: ", i, v.val)
+			if fmt.Sprint(*(val.I)) != v.val {
+				t.Error("case 1.2 failed: ", val.I, v.val)
 			}
 			e = e.Next()
 			return true
@@ -287,23 +287,23 @@ func Test_walk(t *testing.T) {
 
 	e = l.Front()
 	c.walk(
-		func(key string, _ *interface{}, i int64, ts int64) bool {
+		func(key string, val *Value, ts int64) bool {
 			v := e.Value.(*Elem)
 			if key != v.key {
 				t.Error("case 1.1 failed: ", key, v.key)
 			}
-			if fmt.Sprint(i) != v.val {
-				t.Error("case 1.2 failed: ", i, v.val)
+			if fmt.Sprint(*(val.I)) != v.val {
+				t.Error("case 1.2 failed: ", val.I, v.val)
 			}
 			return false
 		})
 }
 
 func TestHashCode(t *testing.T) {
-	if hashCode("12345") != int32(1658880867) {
+	if hashCode("12345") != int32(181817270) {
 		t.Error("case 1 failed")
 	}
-	if hashCode("abcdefghijklmnopqrstuvwxyz") != int32(-1761441311) {
+	if hashCode("abcdefghijklmnopqrstuvwxyz") != int32(-91651236) {
 		t.Error("case 2 failed")
 	}
 }
@@ -382,8 +382,8 @@ func TestWalk(t *testing.T) {
 	m["5"] = "5"
 	lc.Put("6", "6")
 	m["6"] = "6"
-	lc.Walk(func(key string, val *interface{}, _ int64, ts int64) bool {
-		if m[key] != (*val).(string) {
+	lc.Walk(func(key string, val *Value, ts int64) bool {
+		if m[key] != (*val.I).(string) {
 			t.Error("case failed")
 		}
 		delete(m, key)
@@ -412,8 +412,8 @@ func TestLRU2Cache(t *testing.T) {
 	}
 
 	toCheck := "1"
-	lc.Inspect(func(action int, key string, value *interface{}, _ int64, ok int) {
-		if action == DEL && value != nil && *(value) != toCheck {
+	lc.Inspect(func(action int, key string, value *Value, ok int) {
+		if action == DEL && value != nil && *(value.I) != toCheck {
 			t.Error("case 4 failed")
 		}
 	})
@@ -488,9 +488,9 @@ func TestConcurrentLRU2(t *testing.T) {
 
 func TestInspect(t *testing.T) {
 	lc := NewLRUCache(1, 3, 1*time.Second)
-	lc.Inspect(func(action int, key string, value *interface{}, _ int64, ok int) {
+	lc.Inspect(func(action int, key string, value *Value, ok int) {
 		if value != nil {
-			fmt.Println(action, key, *(value), ok)
+			fmt.Println(action, key, *(value.I), ok)
 		} else {
 			fmt.Println(action, key, ok)
 		}
