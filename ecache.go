@@ -25,8 +25,8 @@ func init() {
 
 type Value struct {
 	I *interface{}
-	D *int64
 	B []byte
+	D int64
 }
 
 type node struct {
@@ -166,13 +166,13 @@ func (c *Cache) LRU2(capPerBkt uint32) *Cache {
 }
 
 // I - an interface value wrapper function for `PutV`
-func (c *Cache) I(i interface{}) Value { return Value{&i, nil, nil} }
-
-// D - a digital value wrapper function for `PutV`
-func (c *Cache) D(d int64) Value { return Value{nil, &d, nil} }
+func (c *Cache) I(i interface{}) Value { return Value{&i, nil, 0} }
 
 // B - a byte slice value wrapper function for `PutV`
-func (c *Cache) B(b []byte) Value { return Value{nil, nil, b} }
+func (c *Cache) B(b []byte) Value { return Value{nil, b, 0} }
+
+// D - a digital value wrapper function for `PutV`
+func (c *Cache) D(d int64) Value { return Value{nil, nil, d} }
 
 // PutV - put a item into cache
 func (c *Cache) PutV(key string, val Value) {
@@ -209,10 +209,10 @@ func (c *Cache) Get(key string) (v interface{}, _ bool) {
 	c.on(GET, key, &n.v, 1)
 	if n.v.I != nil {
 		v = *n.v.I
-	} else if n.v.D != nil {
-		v = *n.v.D
-	} else {
+	} else if n.v.B != nil {
 		v = n.v.B
+	} else {
+		v = n.v.D
 	}
 	c.locks[idx].Unlock()
 	return v, true
