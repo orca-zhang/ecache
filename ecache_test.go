@@ -300,10 +300,10 @@ func Test_walk(t *testing.T) {
 }
 
 func TestHashCode(t *testing.T) {
-	if hashCode("12345") != int32(181817270) {
+	if hashCode("12345") != int32(1658880867) {
 		t.Error("case 1 failed")
 	}
-	if hashCode("abcdefghijklmnopqrstuvwxyz") != int32(-91651236) {
+	if hashCode("abcdefghijklmnopqrstuvwxyz") != int32(-1761441311) {
 		t.Error("case 2 failed")
 	}
 }

@@ -1,7 +1,6 @@
 package ecache
 
 import (
-	"github.com/cespare/xxhash"
 	"sync"
 	"sync/atomic"
 	"time"
@@ -24,9 +23,9 @@ func init() {
 }
 
 type Value struct {
-	I *interface{}
-	B []byte
-	D int64
+	I *interface{} // interface
+	B []byte       // bytes
+	D int64        // digits
 }
 
 type node struct {
@@ -112,9 +111,12 @@ func (c *cache) ajust(idx, f, t uint32) {
 	}
 }
 
-// hashCode hashes a string to a unique hashcode.
+// hashCode hashes a string to a unique hashcode. BKDR hash as default
 func hashCode(s string) (hash int32) {
-	return int32(xxhash.Sum64([]byte(s)))
+	for i := 0; i < len(s); i++ {
+		hash = hash*131 + int32(s[i])
+	}
+	return hash
 }
 
 func (c *Cache) get(key string, idx, level int32) (*node, int) {
