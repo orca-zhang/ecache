@@ -23,6 +23,12 @@ func init() {
 	}()
 }
 
+const (
+	IFACE = iota
+	BYTES
+	DIGIT
+)
+
 type Value struct {
 	I *interface{}
 	B []byte
@@ -187,7 +193,21 @@ func (c *Cache) PutV(key string, val Value) {
 func (c *Cache) Put(key string, val interface{}) { c.PutV(key, c.I(val)) }
 
 // Get - get value of key from cache with result
-func (c *Cache) Get(key string) (v interface{}, _ bool) {
+func (c *Cache) Get(key string) (interface{}, bool) {
+	if i, b, d, ok := c.GetV(key); ok {
+		if i != nil {
+			return *i, true
+		} else if b != nil {
+			return b, true
+		} else {
+			return d, true
+		}
+	}
+	return nil, false
+}
+
+// GetV - get value of key from cache with result
+func (c *Cache) GetV(key string) (i *interface{}, b []byte, d int64, _ bool) {
 	idx := hashCode(key) & c.mask
 	c.locks[idx].Lock()
 	n, s := (*node)(nil), 0
@@ -204,18 +224,12 @@ func (c *Cache) Get(key string) (v interface{}, _ bool) {
 	if s <= 0 {
 		c.locks[idx].Unlock()
 		c.on(GET, key, nil, 0)
-		return nil, false
+		return
 	}
 	c.on(GET, key, &n.v, 1)
-	if n.v.I != nil {
-		v = *n.v.I
-	} else if n.v.B != nil {
-		v = n.v.B
-	} else {
-		v = n.v.D
-	}
+	i, b, d = n.v.I, n.v.B, n.v.D
 	c.locks[idx].Unlock()
-	return v, true
+	return i, b, d, true
 }
 
 // Del - delete item by key from cache
