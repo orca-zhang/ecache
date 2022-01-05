@@ -47,11 +47,11 @@ func create(cap uint32) *cache {
 }
 
 // put a cache item into lru cache, if added return 1, updated return 0
-func (c *cache) put(k string, v Value, on inspector) int {
+func (c *cache) put(k string, i *interface{}, b []byte, d int64, on inspector) (*Value, int) {
 	if x, ok := c.hmap[k]; ok {
-		c.m[x-1].v, c.m[x-1].ts = v, now()
+		c.m[x-1].v.I, c.m[x-1].v.B, c.m[x-1].v.D, c.m[x-1].ts = i, b, d, now()
 		c.ajust(x, p, n) // refresh to head
-		return 0
+		return &c.m[x-1].v, 0
 	}
 
 	if c.last == uint32(cap(c.m)) {
@@ -60,9 +60,9 @@ func (c *cache) put(k string, v Value, on inspector) int {
 			on(PUT, (*tail).k, &(*tail).v, -1)
 		}
 		delete(c.hmap, (*tail).k)
-		c.hmap[k], (*tail).k, (*tail).v, (*tail).ts = c.dlnk[0][p], k, v, now() // reuse to reduce gc
-		c.ajust(c.dlnk[0][p], p, n)                                             // refresh to head
-		return 1
+		c.hmap[k], (*tail).k, (*tail).v.I, (*tail).v.B, (*tail).v.D, (*tail).ts = c.dlnk[0][p], k, i, b, d, now() // reuse to reduce gc
+		c.ajust(c.dlnk[0][p], p, n)                                                                               // refresh to head
+		return &(*tail).v, 1
 	}
 
 	c.last++
@@ -71,8 +71,8 @@ func (c *cache) put(k string, v Value, on inspector) int {
 	} else {
 		c.dlnk[c.dlnk[0][n]][p] = c.last
 	}
-	c.m[c.last-1].k, c.m[c.last-1].v, c.m[c.last-1].ts, c.dlnk[c.last], c.hmap[k], c.dlnk[0][n] = k, v, now(), [2]uint32{0, c.dlnk[0][n]}, c.last, c.last
-	return 1
+	c.m[c.last-1].k, c.m[c.last-1].v.I, c.m[c.last-1].v.B, c.m[c.last-1].v.D, c.m[c.last-1].ts, c.dlnk[c.last], c.hmap[k], c.dlnk[0][n] = k, i, b, d, now(), [2]uint32{0, c.dlnk[0][n]}, c.last, c.last
+	return &c.m[c.last-1].v, 1
 }
 
 // get value of key from lru cache with result
@@ -166,25 +166,19 @@ func (c *Cache) LRU2(capPerBkt uint32) *Cache {
 }
 
 // I - an interface value wrapper function for `PutV`
-func (c *Cache) I(i interface{}) Value { return Value{&i, nil, 0} }
-
-// B - a byte slice value wrapper function for `PutV`
-func (c *Cache) B(b []byte) Value { return Value{nil, b, 0} }
-
-// D - a digital value wrapper function for `PutV`
-func (c *Cache) D(d int64) Value { return Value{nil, nil, d} }
+func (c *Cache) I(i interface{}) *interface{} { return &i }
 
 // PutV - put a item into cache
-func (c *Cache) PutV(key string, val Value) {
+func (c *Cache) PutV(key string, i *interface{}, b []byte, d int64) {
 	idx := hashCode(key) & c.mask
 	c.locks[idx].Lock()
-	status := c.insts[idx][0].put(key, val, c.on)
+	v, status := c.insts[idx][0].put(key, i, b, d, c.on)
+	c.on(PUT, key, v, status)
 	c.locks[idx].Unlock()
-	c.on(PUT, key, &val, status)
 }
 
 // Put - put a item into cache
-func (c *Cache) Put(key string, val interface{}) { c.PutV(key, c.I(val)) }
+func (c *Cache) Put(key string, val interface{}) { c.PutV(key, &val, nil, 0) }
 
 // Get - get value of key from cache with result
 func (c *Cache) Get(key string) (interface{}, bool) {
@@ -212,7 +206,7 @@ func (c *Cache) GetV(key string) (i *interface{}, b []byte, d int64, _ bool) {
 		if s <= 0 {
 			n, s = c.get(key, idx, 1) // re-find in level-1
 		} else {
-			c.insts[idx][1].put(key, n.v, c.on) // find in level-0, move to level-1
+			c.insts[idx][1].put(key, n.v.I, n.v.B, n.v.D, c.on) // find in level-0, move to level-1
 		}
 	}
 	if s <= 0 {
