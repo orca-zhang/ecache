@@ -23,17 +23,10 @@ func init() {
 	}()
 }
 
-const (
-	IFACE = iota
-	BYTES
-	DIGIT
-)
-
 type Value struct {
-	I    *interface{}
-	B    []byte
-	D    int64
-	Kind int8
+	I *interface{}
+	D *int64
+	B []byte
 }
 
 type node struct {
@@ -173,13 +166,13 @@ func (c *Cache) LRU2(capPerBkt uint32) *Cache {
 }
 
 // I - an interface value wrapper function for `PutV`
-func (c *Cache) I(i interface{}) Value { return Value{&i, nil, 0, IFACE} }
+func (c *Cache) I(i interface{}) Value { return Value{&i, nil, nil} }
 
 // D - a digital value wrapper function for `PutV`
-func (c *Cache) D(d int64) Value { return Value{nil, nil, d, DIGIT} }
+func (c *Cache) D(d int64) Value { return Value{nil, &d, nil} }
 
 // B - a byte slice value wrapper function for `PutV`
-func (c *Cache) B(b []byte) Value { return Value{nil, b, 0, BYTES} }
+func (c *Cache) B(b []byte) Value { return Value{nil, nil, b} }
 
 // PutV - put a item into cache
 func (c *Cache) PutV(key string, val Value) {
@@ -214,13 +207,12 @@ func (c *Cache) Get(key string) (v interface{}, _ bool) {
 		return nil, false
 	}
 	c.on(GET, key, &n.v, 1)
-	switch n.v.Kind {
-	case IFACE:
+	if n.v.I != nil {
 		v = *n.v.I
-	case BYTES:
+	} else if n.v.D != nil {
+		v = *n.v.D
+	} else {
 		v = n.v.B
-	case DIGIT:
-		v = n.v.D
 	}
 	c.locks[idx].Unlock()
 	return v, true
