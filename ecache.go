@@ -209,7 +209,7 @@ func (c *Cache) Get(key string) (interface{}, bool) {
 }
 
 // GetV - get value of key from cache with result
-func (c *Cache) GetV(key string) (Value, bool) {
+func (c *Cache) GetV(key string) (v Value, _ bool) {
 	idx := hashCode(key) & c.mask
 	c.locks[idx].Lock()
 	n, s := (*node)(nil), 0
@@ -226,9 +226,9 @@ func (c *Cache) GetV(key string) (Value, bool) {
 	if s <= 0 {
 		c.locks[idx].Unlock()
 		c.on(GET, key, nil, 0)
-		return Value{}, false
+		return
 	}
-	v := n.v
+	v.I, v.B, v.D = n.v.I, n.v.B, n.v.D
 	c.locks[idx].Unlock()
 	c.on(GET, key, &v, 1)
 	return v, true
