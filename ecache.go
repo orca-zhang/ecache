@@ -23,12 +23,6 @@ func init() {
 	}()
 }
 
-const (
-	IFACE = iota
-	BYTES
-	DIGIT
-)
-
 type Value struct {
 	I *interface{}
 	B []byte
