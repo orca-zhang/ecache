@@ -194,22 +194,7 @@ func (c *Cache) PutV(key string, val Value) {
 func (c *Cache) Put(key string, val interface{}) { c.PutV(key, c.I(val)) }
 
 // Get - get value of key from cache with result
-func (c *Cache) Get(key string) (interface{}, bool) {
-	if k, i, b, d, ok := c.GetV(key); ok {
-		switch k {
-		case IFACE:
-			return *i, true
-		case BYTES:
-			return b, true
-		case DIGIT:
-			return d, true
-		}
-	}
-	return nil, false
-}
-
-// GetV - get value of key from cache with result
-func (c *Cache) GetV(key string) (k int8, i *interface{}, b []byte, d int64, _ bool) {
+func (c *Cache) Get(key string) (v interface{}, _ bool) {
 	idx := hashCode(key) & c.mask
 	c.locks[idx].Lock()
 	n, s := (*node)(nil), 0
@@ -226,12 +211,19 @@ func (c *Cache) GetV(key string) (k int8, i *interface{}, b []byte, d int64, _ b
 	if s <= 0 {
 		c.locks[idx].Unlock()
 		c.on(GET, key, nil, 0)
-		return
+		return nil, false
 	}
 	c.on(GET, key, &n.v, 1)
-	k, i, b, d = n.v.Kind, n.v.I, n.v.B, n.v.D
+	switch n.v.Kind {
+	case IFACE:
+		v = *n.v.I
+	case BYTES:
+		v = n.v.B
+	case DIGIT:
+		v = n.v.D
+	}
 	c.locks[idx].Unlock()
-	return k, i, b, d, true
+	return v, true
 }
 
 // Del - delete item by key from cache
