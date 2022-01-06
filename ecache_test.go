@@ -310,24 +310,30 @@ func TestHashBKRD(t *testing.T) {
 	}
 }
 
-func TestNextPowOf2(t *testing.T) {
-	if nextPowOf2(0) != 1 {
+func TestMaskOfNextPowOf2(t *testing.T) {
+	if maskOfNextPowOf2(0) != 0 {
 		t.Error("case 1 failed")
 	}
-	if nextPowOf2(1) != 1 {
+	if maskOfNextPowOf2(1) != 1 {
 		t.Error("case 2 failed")
 	}
-	if nextPowOf2(2) != 2 {
+	if maskOfNextPowOf2(2) != 1 {
 		t.Error("case 3 failed")
 	}
-	if nextPowOf2(3) != 4 {
+	if maskOfNextPowOf2(3) != 3 {
 		t.Error("case 4 failed")
 	}
-	if nextPowOf2(123) != 128 {
+	if maskOfNextPowOf2(4) != 3 {
 		t.Error("case 5 failed")
 	}
-	if nextPowOf2(0x7FFFFFFF) != 0x80000000 {
+	if maskOfNextPowOf2(123) != 127 {
 		t.Error("case 6 failed")
+	}
+	if maskOfNextPowOf2(0x7FFF) != 0x7FFF {
+		t.Error("case 7 failed")
+	}
+	if maskOfNextPowOf2(0x8001) != 0xFFFF {
+		t.Error("case 8 failed")
 	}
 }
 

@@ -7,7 +7,7 @@ import (
 	"time"
 )
 
-var clock, p, n = time.Now().UnixNano(), uint32(0), uint32(1)
+var clock, p, n = time.Now().UnixNano(), uint16(0), uint16(1)
 
 func now() int64 { return atomic.LoadInt64(&clock) }
 func init() {
@@ -35,14 +35,14 @@ type node struct {
 }
 
 type cache struct {
-	dlnk [][2]uint32       // double link list, 0 for prev, 1 for next, the first node stands for [tail, head]
+	dlnk [][2]uint16       // double link list, 0 for prev, 1 for next, the first node stands for [tail, head]
 	m    []node            // memory pre-allocated
-	hmap map[string]uint32 // key -> idx in []node
-	last uint32            // last element index when not full
+	hmap map[string]uint16 // key -> idx in []node
+	last uint16            // last element index when not full
 }
 
-func create(cap uint32) *cache {
-	return &cache{make([][2]uint32, cap+1), make([]node, cap), make(map[string]uint32, cap), 0}
+func create(cap uint16) *cache {
+	return &cache{make([][2]uint16, cap+1), make([]node, cap), make(map[string]uint16, cap), 0}
 }
 
 // put a cache item into lru cache, if added return 1, updated return 0
@@ -53,7 +53,7 @@ func (c *cache) put(k string, i *interface{}, b []byte, on inspector) (*Value, i
 		return &c.m[x-1].v, 0
 	}
 
-	if c.last == uint32(cap(c.m)) {
+	if c.last == uint16(cap(c.m)) {
 		tail := &c.m[c.dlnk[0][p]-1]
 		if (*tail).ts > 0 { // do not notify for mark delete ones
 			on(PUT, (*tail).k, &(*tail).v, -1)
@@ -70,7 +70,7 @@ func (c *cache) put(k string, i *interface{}, b []byte, on inspector) (*Value, i
 	} else {
 		c.dlnk[c.dlnk[0][n]][p] = c.last
 	}
-	c.m[c.last-1].k, c.m[c.last-1].v.I, c.m[c.last-1].v.B, c.m[c.last-1].ts, c.dlnk[c.last], c.hmap[k], c.dlnk[0][n] = k, i, b, now(), [2]uint32{0, c.dlnk[0][n]}, c.last, c.last
+	c.m[c.last-1].k, c.m[c.last-1].v.I, c.m[c.last-1].v.B, c.m[c.last-1].ts, c.dlnk[c.last], c.hmap[k], c.dlnk[0][n] = k, i, b, now(), [2]uint16{0, c.dlnk[0][n]}, c.last, c.last
 	return &c.m[c.last-1].v, 1
 }
 
@@ -85,12 +85,10 @@ func (c *cache) get(k string) (*node, int) {
 
 // delete item by key from lru cache
 func (c *cache) del(k string) (*node, int) {
-	if x, ok := c.hmap[k]; ok {
-		if c.m[x-1].ts > 0 {
-			c.m[x-1].ts = 0  // mark as deleted
-			c.ajust(x, n, p) // sink to tail
-			return &c.m[x-1], 1
-		}
+	if x, ok := c.hmap[k]; ok && c.m[x-1].ts > 0 {
+		c.m[x-1].ts = 0  // mark as deleted
+		c.ajust(x, n, p) // sink to tail
+		return &c.m[x-1], 1
 	}
 	return nil, 0
 }
@@ -105,13 +103,12 @@ func (c *cache) walk(walker func(k string, v *Value, ts int64) bool) {
 }
 
 // when f=0, t=1, move to head, otherwise to tail
-func (c *cache) ajust(idx, f, t uint32) {
+func (c *cache) ajust(idx, f, t uint16) {
 	if c.dlnk[idx][f] != 0 { // f=0, t=1, not head node, otherwise not tail
 		c.dlnk[c.dlnk[idx][t]][f], c.dlnk[c.dlnk[idx][f]][t], c.dlnk[idx][f], c.dlnk[idx][t], c.dlnk[c.dlnk[0][t]][f], c.dlnk[0][t] = c.dlnk[idx][f], c.dlnk[idx][t], 0, c.dlnk[0][t], idx, idx
 	}
 }
 
-// hashBKRD hashes a string to a unique hashcode.
 func hashBKRD(s string) (hash int32) {
 	for i := 0; i < len(s); i++ {
 		hash = hash*131 + int32(s[i])
@@ -119,11 +116,14 @@ func hashBKRD(s string) (hash int32) {
 	return hash
 }
 
-func nextPowOf2(cap uint32) uint32 {
-	if cap > 0 && cap&(cap-1) == 0 {
-		return cap
+func maskOfNextPowOf2(cap uint16) uint16 {
+	if cap > 1 && cap&(cap-1) == 0 {
+		return cap - 1
 	}
-	return (cap | (cap >> 1) | (cap >> 2) | (cap >> 4) | (cap >> 8) | (cap >> 16)) + 1
+	cap |= (cap >> 1)
+	cap |= (cap >> 2)
+	cap |= (cap >> 4)
+	return cap | (cap >> 8)
 }
 
 // Cache - concurrent cache structure
@@ -139,9 +139,9 @@ type Cache struct {
 // `bucketCnt` is buckets that shard items to reduce lock racing
 // `capPerBkt` is length of each bucket, can store `capPerBkt * bucketCnt` count of items in Cache at most
 // optional `expiration` is item alive time (and we only use lazy eviction here), default `0` stands for permanent
-func NewLRUCache(bucketCnt, capPerBkt uint32, expiration ...time.Duration) *Cache {
-	size := nextPowOf2(bucketCnt)
-	c := &Cache{make([]sync.Mutex, size), make([][2]*cache, size), 0, func(int, string, *Value, int) {}, int32(size - 1)}
+func NewLRUCache(bucketCnt, capPerBkt uint16, expiration ...time.Duration) *Cache {
+	mask := maskOfNextPowOf2(bucketCnt)
+	c := &Cache{make([]sync.Mutex, mask+1), make([][2]*cache, mask+1), 0, func(int, string, *Value, int) {}, int32(mask)}
 	for i := range c.insts {
 		c.insts[i][0] = create(capPerBkt)
 	}
@@ -153,7 +153,7 @@ func NewLRUCache(bucketCnt, capPerBkt uint32, expiration ...time.Duration) *Cach
 
 // LRU2 - add LRU-2 support (especially LRU-2 that when item visited twice it moves to upper-level-cache)
 // `capPerBkt` is length of each LRU-2 bucket, can store extra `capPerBkt * bucketCnt` count of items in Cache at most
-func (c *Cache) LRU2(capPerBkt uint32) *Cache {
+func (c *Cache) LRU2(capPerBkt uint16) *Cache {
 	for i := range c.insts {
 		c.insts[i][1] = create(capPerBkt)
 	}
@@ -167,6 +167,14 @@ func (c *Cache) put(key string, i *interface{}, b []byte) {
 	v, status := c.insts[idx][0].put(key, i, b, c.on)
 	c.on(PUT, key, v, status)
 	c.locks[idx].Unlock()
+}
+
+// ToInt64 - convert bytes to int64
+func ToInt64(b []byte) (int64, bool) {
+	if len(b) >= 8 {
+		return int64(binary.LittleEndian.Uint64(b)), true
+	}
+	return 0, false
 }
 
 // Put - put an item into cache
@@ -200,8 +208,8 @@ func (c *Cache) GetBytes(key string) ([]byte, bool) {
 
 // GetInt64 - get value of key from cache with result
 func (c *Cache) GetInt64(key string) (int64, bool) {
-	if _, b, ok := c.get(key); ok && len(b) >= 8 {
-		return int64(binary.LittleEndian.Uint64(b)), true
+	if _, b, ok := c.get(key); ok {
+		return ToInt64(b)
 	}
 	return 0, false
 }
@@ -220,8 +228,7 @@ func (c *Cache) get(key string) (i *interface{}, b []byte, _ bool) {
 	if c.insts[idx][1] == nil { // (if LRU-2 mode not support, loss is little)
 		n, s = c._get(key, idx, 0) // normal lru mode
 	} else {
-		n, s = c.insts[idx][0].del(key) // LRU-2 mode
-		if s <= 0 {
+		if n, s = c.insts[idx][0].del(key); s <= 0 { // LRU-2 mode
 			n, s = c._get(key, idx, 1) // re-find in level-1
 		} else {
 			c.insts[idx][1].put(key, n.v.I, n.v.B, c.on) // find in level-0, move to level-1
@@ -244,8 +251,7 @@ func (c *Cache) Del(key string) {
 	c.locks[idx].Lock()
 	n, s := c.insts[idx][0].del(key)
 	if c.insts[idx][1] != nil { // (if LRU-2 mode not support, loss is little)
-		n2, s2 := c.insts[idx][1].del(key)
-		if n2 != nil && (n == nil || n.ts < n2.ts) { // callback latest added one if both exists
+		if n2, s2 := c.insts[idx][1].del(key); n2 != nil && (n == nil || n.ts < n2.ts) { // callback latest added one if both exists
 			n, s = n2, s2
 		}
 	}
@@ -262,8 +268,7 @@ func (c *Cache) Del(key string) {
 func (c *Cache) Walk(walker func(k string, v *Value, ts int64) bool) {
 	for i := range c.insts {
 		c.locks[i].Lock()
-		c.insts[i][0].walk(walker)
-		if c.insts[i][1] != nil {
+		if c.insts[i][0].walk(walker); c.insts[i][1] != nil {
 			c.insts[i][1].walk(walker)
 		}
 		c.locks[i].Unlock()

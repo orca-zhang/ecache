@@ -98,18 +98,20 @@ c.Del("uid1")
 ## Instruction
 
 - `NewLRUCache`
-  - First parameter is the number of buckets, each bucket will use an independent lock
+  - First parameter is the number of buckets, each bucket will use an independent lock, max to 65535(for 65536 buckets)
     - Don't worry, just set as you want, `ecache` will find a suitable number which is convenient for mask calculation later
-  - Second parameter is the number of items that each bucket can hold
-    - When `ecache` is full, there should be `first parameter X second parameter` item
+  - Second parameter is the number of items that each bucket can hold, max to 65535
+    - When `ecache` is full, there should be `first parameter X second parameter` item, max to 4.2 billion items
   - \[Optional\]Third parameter is the expiration time of each item
     - `ecache` uses internal counter to improve performance, default 100ms accuracy, calibration every second
     - No parameter or pass `0`, means permanent
 
 ## Best Practices
 
+- Support any type of value
+  - Provides `Put`/`PutInt64`/`PutBytes` three methods to adapt to different scenarios and need to be used in pairs with `Get`/`GetInt64`/`GetBytes` (the latter two methods have less GC cost)
 - Store pointers for complex objects (Note: ⚠️ Do not modify its fields once it is put in, even if it is taken out again, because the item may be accessed by other people at the same time)
-   - If you need to modify, the solution: take out each individual assignment of the field, or use [copier to make a deep copy and modify on the copy](#need-to-modify-and-store-the-object-pointer)
+  - If you need to modify, the solution: take out each individual assignment of the field, or use [copier to make a deep copy and modify on the copy](#need-to-modify-and-store-the-object-pointer)
 - Objects can also be stored directly (compared to the previous one, the performance is worse because there are copy operations when taken out)
 - The larger cached objects, the better, the upper level of the business, the better (save memory assembly and data organization time)
 - If you don’t want to erase the hot data due to traversal requests, you can switch to [`LRU-2` mode](#LRU-2-mode), there may be very little loss (💬 [What Is LRU-2](#What-Is-LRU-2))
@@ -120,6 +122,19 @@ c.Del("uid1")
    - At the end or intervally call `Walk` to flush the data to storage
 
 ## Special Scenarios
+
+### integer or bytes value
+``` go
+c.PutInt64("uid1", int64(1))
+if d, ok := c.GetInt64("uid1"); ok {
+    // d is type of `int64` and value is 1
+}
+
+c.PutBytes("uid1", b)// b is type of `[]byte`
+if b, ok := c.GetBytes("uid1"); ok {
+    // b is type of `[]byte`
+}
+```
 
 ### LRU-2 mode
 
@@ -169,19 +184,21 @@ o.Status = 1      // Modify the field of the copy
 // `action`:PUT, `status`: evicted=-1, updated=0, added=1
 // `action`:GET, `status`: miss=0, hit=1
 // `action`:DEL, `status`: miss=0, hit=1
-// `value` is only valid when `status` is not 0 or `action` is PUT
-type inspector func(action int, key string, value *interface{}, status int)
-
-// Inspect - inject a inspector
-func (c *Cache) Inspect(insptr inspector)
+// `value` is not `nil` when `status` is not 0 or `action` is PUT
+type inspector func(action int, key string, value *ecache.Value, status int)
 ```
 
 - How to use
 ``` go
-c.Inspect(func(action int, key string, value *interface{}, status int) {
+cache.Inspect(func(action int, key string, value *ecache.Value, status int) {
    // TODO: add what you want to do
    //     Inspector will be executed in sequence according to the injection order
    //     Note:⚠️ If there is a operation that takes a long time, try to transfer job to another channel to ensure not blocking current coroutine.
+   
+   // - how to fetch right value -
+   //   - `Put`:      `*(value.I)`
+   //   - `PutBytes`: `value.B`
+   //   - `PutInt64`: `ecache.ToInt64(value.B)`
 })
 ```
 
@@ -319,10 +336,10 @@ dist.OnDel("user", "uid1")
 
 > `ecache` is an upgraded version of the [`lrucache`](http://github.com/orca-zhang/lrucache) library
 
-- Bottom layer is the most basic `LRU` implemented with native map and `node` that stores double-linked lists (the longest not visited)
+- Bottom layer is the most basic `LRU` implemented with native map and double-linked lists (the longest not visited)
    - PS: All other versions I implemented ([go](https://github.com/orca-zhang/lrucache) / [C++](https://github.com/ez8-co/linked_hash) / [js](https://github.com/orca-zhang/ecache.js)) in leetcode are solutions beats 100% submissions.
 - Second layer includes bucketing strategy, concurrency control, and expiration control (it will automatically adapt to power-of-two buckets to facilitate mask calculation)
-- Layer 2.5 implements the `LRU-2` ability in a very simple way, the code does not exceed 20 lines, directly look at the source code (search for the keyword `LRU-2`)
+- The 2.5 layer implements the `LRU-2` ability in a very simple way, the code does not exceed 20 lines, directly look at the source code (search for the keyword `LRU-2`)
 
 ### What is LRU
 
@@ -361,14 +378,13 @@ dist.OnDel("user", "uid1")
 - Use string type for key (strong scalability; built-in language support for reference, which saves memory).
 - No virtual header for doubly-linked list (although it is a little bit around, but there is an increase of about 20%).
 - Choose `LRU-2` to implement `LRU-K` (simple implementation, almost no additional loss).
-- Whole block of memory allocation is not used (reuse the previous memory after it is full is also very good, whole block method has been tried but improves little and the readability is greatly decreased).
 - Store pointers directly (without serialization, the advantage is greatly reduced if you use `[]byte`).
 - Use internal counter for timing (default 100ms accuracy, calibration per second, `pprof` found that time.Now() generates temporary objects, which leads to increased GC time consumption).
+- -Double-linked list uses fixed allocation memory storage, uses zero timestamp to mark delete, reduces GC (and saves memory by more than 50% compared with `bigcache` in the same specification)
 
 #### Failed optimization attempt
 
 - The key is changed from string to `reflect.StringHeader`, result: negative optimization.
-- The node pre-allocates contiguous space, and determines whether the new allocation (whether it is full) or reuse through the cursor and freelist, result: not obvious.
 - The mutex lock is changed to a read-write lock, the Get request will also modify the data, and the access is illegal, even if the data is not changed, the result: negative optimization for read-write mixed scenarios.
 - Use `time.Timer` implements the internal counter, the result: the trigger is unstable, use `time.Sleep` instead.
 - Distributed consistency plugin that automatically updated and deleted by the inspector. The result: the performance decreased and the loop call problem needs to be specially dealt with.
