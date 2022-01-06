@@ -12,6 +12,8 @@ var on = func(int, string, *Value, int) {}
 
 var inst = NewLRUCache(1, 1, time.Second)
 
+func iface(i interface{}) *interface{} { return &i }
+
 type Elem struct {
 	key string
 	val string
@@ -26,9 +28,9 @@ func Test_create(t *testing.T) {
 
 func Test_put(t *testing.T) {
 	c := create(5)
-	c.put("1", I("1"), nil, on)
-	c.put("2", I("2"), nil, on)
-	c.put("1", I("3"), nil, on)
+	c.put("1", iface("1"), nil, on)
+	c.put("2", iface("2"), nil, on)
+	c.put("1", iface("3"), nil, on)
 	if len(c.hmap) != 2 {
 		t.Error("case 2.1 failed")
 	}
@@ -53,10 +55,10 @@ func Test_put(t *testing.T) {
 		e = e.Next()
 	}
 
-	c.put("3", I("4"), nil, on)
-	c.put("4", I("5"), nil, on)
-	c.put("5", I("6"), nil, on)
-	c.put("2", I("7"), nil, on)
+	c.put("3", iface("4"), nil, on)
+	c.put("4", iface("5"), nil, on)
+	c.put("5", iface("6"), nil, on)
+	c.put("2", iface("7"), nil, on)
 	if len(c.hmap) != 5 {
 		t.Error("case 3.1 failed")
 	}
@@ -107,7 +109,7 @@ func Test_put(t *testing.T) {
 		e = e.Next()
 	}
 
-	c.put("6", I("8"), nil, on)
+	c.put("6", iface("8"), nil, on)
 	if len(c.hmap) != 5 {
 		t.Error("case 4.1 failed")
 	}
@@ -138,12 +140,12 @@ func Test_put(t *testing.T) {
 
 func Test_get(t *testing.T) {
 	c := create(2)
-	c.put("1", I("1"), nil, on)
-	c.put("2", I("2"), nil, on)
+	c.put("1", iface("1"), nil, on)
+	c.put("2", iface("2"), nil, on)
 	if v, _ := c.get("1"); *(v.v.I) != "1" {
 		t.Error("case 1.1 failed")
 	}
-	c.put("3", I("3"), nil, on)
+	c.put("3", iface("3"), nil, on)
 	if len(c.hmap) != 2 {
 		t.Error("case 1.2 failed")
 	}
@@ -168,11 +170,11 @@ func Test_get(t *testing.T) {
 
 func Test_delete(t *testing.T) {
 	c := create(5)
-	c.put("3", I("4"), nil, on)
-	c.put("4", I("5"), nil, on)
-	c.put("5", I("6"), nil, on)
-	c.put("2", I("7"), nil, on)
-	c.put("6", I("8"), nil, on)
+	c.put("3", iface("4"), nil, on)
+	c.put("4", iface("5"), nil, on)
+	c.put("5", iface("6"), nil, on)
+	c.put("2", iface("7"), nil, on)
+	c.put("6", iface("8"), nil, on)
 	c.del("5")
 
 	l := list.New()
@@ -254,11 +256,11 @@ func Test_delete(t *testing.T) {
 
 func Test_walk(t *testing.T) {
 	c := create(5)
-	c.put("3", I(4), nil, on)
-	c.put("4", I(5), nil, on)
-	c.put("5", I(6), nil, on)
-	c.put("2", I(7), nil, on)
-	c.put("6", I(8), nil, on)
+	c.put("3", iface(4), nil, on)
+	c.put("4", iface(5), nil, on)
+	c.put("5", iface(6), nil, on)
+	c.put("2", iface(7), nil, on)
+	c.put("6", iface(8), nil, on)
 
 	l := list.New()
 	l.PushBack(&Elem{"6", "8"})
@@ -299,11 +301,11 @@ func Test_walk(t *testing.T) {
 		})
 }
 
-func TestHashCode(t *testing.T) {
-	if hashCode("12345") != int32(1658880867) {
+func TestHashBKRD(t *testing.T) {
+	if hashBKRD("12345") != int32(1658880867) {
 		t.Error("case 1 failed")
 	}
-	if hashCode("abcdefghijklmnopqrstuvwxyz") != int32(-1761441311) {
+	if hashBKRD("abcdefghijklmnopqrstuvwxyz") != int32(-1761441311) {
 		t.Error("case 2 failed")
 	}
 }

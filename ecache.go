@@ -111,19 +111,12 @@ func (c *cache) ajust(idx, f, t uint32) {
 	}
 }
 
-// hashCode hashes a string to a unique hashcode. BKDR hash as default
-func hashCode(s string) (hash int32) {
+// hashBKRD hashes a string to a unique hashcode.
+func hashBKRD(s string) (hash int32) {
 	for i := 0; i < len(s); i++ {
 		hash = hash*131 + int32(s[i])
 	}
 	return hash
-}
-
-func (c *Cache) get(key string, idx, level int32) (*node, int) {
-	if n, s := c.insts[idx][level].get(key); s > 0 && !((c.expiration > 0 && now()-n.ts > int64(c.expiration)) || n.ts <= 0) {
-		return n, s // not necessary to remove the expired item here, otherwise will cause GC thrashing
-	}
-	return nil, 0
 }
 
 func nextPowOf2(cap uint32) uint32 {
@@ -167,59 +160,69 @@ func (c *Cache) LRU2(capPerBkt uint32) *Cache {
 	return c
 }
 
-// I - an interface value wrapper function for `PutV`
-func I(i interface{}) *interface{} { return &i }
-
-// D - a digit value wrapper function for `PutV`
-func D(d int64) []byte {
-	var data [8]byte
-	binary.LittleEndian.PutUint64(data[:], uint64(d))
-	return data[:]
-}
-
-// ToD - a digit value convertor
-func ToD(data []byte) (int64, bool) {
-	if len(data) < 8 {
-		return 0, false
-	}
-	return int64(binary.LittleEndian.Uint64(data)), true
-}
-
-// PutV - put a item into cache
-func (c *Cache) PutV(key string, i *interface{}, b []byte) {
-	idx := hashCode(key) & c.mask
+// put - put a item into cache
+func (c *Cache) put(key string, i *interface{}, b []byte) {
+	idx := hashBKRD(key) & c.mask
 	c.locks[idx].Lock()
 	v, status := c.insts[idx][0].put(key, i, b, c.on)
 	c.on(PUT, key, v, status)
 	c.locks[idx].Unlock()
 }
 
-// Put - put a item into cache
-func (c *Cache) Put(key string, val interface{}) { c.PutV(key, &val, nil) }
+// Put - put an item into cache
+func (c *Cache) Put(key string, val interface{}) { c.put(key, &val, nil) }
+
+// PutInt64 - put a digit item into cache
+func (c *Cache) PutInt64(key string, d int64) {
+	var data [8]byte
+	binary.LittleEndian.PutUint64(data[:], uint64(d))
+	c.put(key, nil, data[:])
+}
+
+// PutBytes - put a bytes item into cache
+func (c *Cache) PutBytes(key string, b []byte) { c.put(key, nil, b) }
 
 // Get - get value of key from cache with result
 func (c *Cache) Get(key string) (interface{}, bool) {
-	if i, b, ok := c.GetV(key); ok {
-		if i != nil {
-			return *i, true
-		} else {
-			return b, true
-		}
+	if i, _, ok := c.get(key); ok && i != nil {
+		return *i, true
 	}
 	return nil, false
 }
 
-// GetV - get value of key from cache with result
-func (c *Cache) GetV(key string) (i *interface{}, b []byte, _ bool) {
-	idx := hashCode(key) & c.mask
+// GetBytes - get bytes value of key from cache with result
+func (c *Cache) GetBytes(key string) ([]byte, bool) {
+	if _, b, ok := c.get(key); ok {
+		return b, true
+	}
+	return nil, false
+}
+
+// GetInt64 - get value of key from cache with result
+func (c *Cache) GetInt64(key string) (int64, bool) {
+	if _, b, ok := c.get(key); ok && len(b) >= 8 {
+		return int64(binary.LittleEndian.Uint64(b)), true
+	}
+	return 0, false
+}
+
+func (c *Cache) _get(key string, idx, level int32) (*node, int) {
+	if n, s := c.insts[idx][level].get(key); s > 0 && !((c.expiration > 0 && now()-n.ts > int64(c.expiration)) || n.ts <= 0) {
+		return n, s // no necessary to remove the expired item here, otherwise will cause GC thrashing
+	}
+	return nil, 0
+}
+
+func (c *Cache) get(key string) (i *interface{}, b []byte, _ bool) {
+	idx := hashBKRD(key) & c.mask
 	c.locks[idx].Lock()
 	n, s := (*node)(nil), 0
 	if c.insts[idx][1] == nil { // (if LRU-2 mode not support, loss is little)
-		n, s = c.get(key, idx, 0) // normal lru mode
+		n, s = c._get(key, idx, 0) // normal lru mode
 	} else {
 		n, s = c.insts[idx][0].del(key) // LRU-2 mode
 		if s <= 0 {
-			n, s = c.get(key, idx, 1) // re-find in level-1
+			n, s = c._get(key, idx, 1) // re-find in level-1
 		} else {
 			c.insts[idx][1].put(key, n.v.I, n.v.B, c.on) // find in level-0, move to level-1
 		}
@@ -237,7 +240,7 @@ func (c *Cache) GetV(key string) (i *interface{}, b []byte, _ bool) {
 
 // Del - delete item by key from cache
 func (c *Cache) Del(key string) {
-	idx := hashCode(key) & c.mask
+	idx := hashBKRD(key) & c.mask
 	c.locks[idx].Lock()
 	n, s := c.insts[idx][0].del(key)
 	if c.insts[idx][1] != nil { // (if LRU-2 mode not support, loss is little)
