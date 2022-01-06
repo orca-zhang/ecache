@@ -227,8 +227,8 @@ func (c *Cache) get(key string) (i *interface{}, b []byte, _ bool) {
 	n, s := (*node)(nil), 0
 	if c.insts[idx][1] == nil { // (if LRU-2 mode not support, loss is little)
 		n, s = c._get(key, idx, 0) // normal lru mode
-	} else {
-		if n, s = c.insts[idx][0].del(key); s <= 0 { // LRU-2 mode
+	} else { // LRU-2 mode
+		if n, s = c.insts[idx][0].del(key); s <= 0 {
 			n, s = c._get(key, idx, 1) // re-find in level-1
 		} else {
 			c.insts[idx][1].put(key, n.v.I, n.v.B, c.on) // find in level-0, move to level-1
@@ -257,7 +257,7 @@ func (c *Cache) Del(key string) {
 	}
 	if s > 0 {
 		c.on(DEL, key, &n.v, 1)
-		n.v.I = nil // release first
+		n.v.I, n.v.B = nil, nil // release now
 	} else {
 		c.on(DEL, key, nil, 0)
 	}

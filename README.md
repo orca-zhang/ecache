@@ -1,6 +1,6 @@
 [English README | 英文说明](README_en.md)
 
-# 🦄 {ecache - An easy cache library}
+# 🦄 ecache
 <p align="center">
   <a href="#">
     <img src="https://github.com/orca-zhang/ecache/raw/master/doc/logo.svg">
