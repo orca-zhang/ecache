@@ -22,6 +22,26 @@ func init() {
 		}
 	}()
 }
+func hashBKRD(s string) (hash int32) {
+	for i := 0; i < len(s); i++ {
+		hash = hash*131 + int32(s[i])
+	}
+	return hash
+}
+func maskOfNextPowOf2(cap uint16) uint16 {
+	if cap > 1 && cap&(cap-1) == 0 {
+		return cap - 1
+	}
+	cap |= (cap >> 1)
+	cap |= (cap >> 2)
+	cap |= (cap >> 4)
+	return cap | (cap >> 8)
+}
+func int64ToBytes(d int64) []byte {
+	var data [8]byte
+	binary.LittleEndian.PutUint64(data[:], uint64(d))
+	return data[:]
+}
 
 type Value struct {
 	I *interface{} // interface
@@ -109,23 +129,6 @@ func (c *cache) ajust(idx, f, t uint16) {
 	}
 }
 
-func hashBKRD(s string) (hash int32) {
-	for i := 0; i < len(s); i++ {
-		hash = hash*131 + int32(s[i])
-	}
-	return hash
-}
-
-func maskOfNextPowOf2(cap uint16) uint16 {
-	if cap > 1 && cap&(cap-1) == 0 {
-		return cap - 1
-	}
-	cap |= (cap >> 1)
-	cap |= (cap >> 2)
-	cap |= (cap >> 4)
-	return cap | (cap >> 8)
-}
-
 // Cache - concurrent cache structure
 type Cache struct {
 	locks      []sync.Mutex
@@ -177,15 +180,14 @@ func ToInt64(b []byte) (int64, bool) {
 	return 0, false
 }
 
+// Int64Key - int64 to pseudo string
+func Int64Key(d int64) string { return string(int64ToBytes(d)) }
+
 // Put - put an item into cache
 func (c *Cache) Put(key string, val interface{}) { c.put(key, &val, nil) }
 
 // PutInt64 - put a digit item into cache
-func (c *Cache) PutInt64(key string, d int64) {
-	var data [8]byte
-	binary.LittleEndian.PutUint64(data[:], uint64(d))
-	c.put(key, nil, data[:])
-}
+func (c *Cache) PutInt64(key string, d int64) { c.put(key, nil, int64ToBytes(d)) }
 
 // PutBytes - put a bytes item into cache
 func (c *Cache) PutBytes(key string, b []byte) { c.put(key, nil, b) }
@@ -282,10 +284,7 @@ const (
 )
 
 // inspector - can be used to statistics cache hit/miss rate or other scenario like ringbuf queue
-//   `action`:PUT, `status`: evicted=-1, updated=0, added=1
-//   `action`:GET, `status`: miss=0, hit=1
-//   `action`:DEL, `status`: miss=0, hit=1
-//   `value` only valid when `status` is not 0 or `action` is PUT
+//   more details about every parameter: https://github.com/orca-zhang/ecache/blob/master/README_en.md#inject-an-inspector
 type inspector func(action int, key string, value *Value, status int)
 
 // Inspect - to inspect the actions
