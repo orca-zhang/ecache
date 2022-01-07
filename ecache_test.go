@@ -314,7 +314,7 @@ func TestMaskOfNextPowOf2(t *testing.T) {
 	if maskOfNextPowOf2(0) != 0 {
 		t.Error("case 1 failed")
 	}
-	if maskOfNextPowOf2(1) != 1 {
+	if maskOfNextPowOf2(1) != 0 {
 		t.Error("case 2 failed")
 	}
 	if maskOfNextPowOf2(2) != 1 {
