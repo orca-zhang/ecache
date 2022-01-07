@@ -1,6 +1,6 @@
 [English README | 英文说明](README_en.md)
 
-# 🦄 {ecache - An easy cache library}
+# 🦄 ecache
 <p align="center">
   <a href="#">
     <img src="https://github.com/orca-zhang/ecache/raw/master/doc/logo.svg">
@@ -98,16 +98,18 @@ c.Del("uid1")
 ## 参数说明
 
 - `NewLRUCache`
-  - 第一个参数是桶的个数，用来分散锁的粒度，每个桶都会使用独立的锁
+  - 第一个参数是桶的个数，用来分散锁的粒度，每个桶都会使用独立的锁，最大值为65535，支持65536个实例
     - 不用担心，随意设置一个就好，`ecache`会找一个合适的数字便于后面掩码计算
-  - 第二个参数是每个桶所能容纳的item个数上限
-    - 意味着`ecache`全部写满的情况下，应该有`第一个参数 X 第二个参数`个item
+  - 第二个参数是每个桶所能容纳的item个数上限，最大值为65535
+    - 意味着`ecache`全部写满的情况下，应该有`第一个参数 X 第二个参数`个item，也即最多42亿个
   - \[可选\]第三个参数是每个item的过期时间
     - `ecache`使用内部计时器提升性能，默认100ms精度，每秒校准
     - 不传或者传`0`，代表永久有效
 
 ## 最佳实践
 
+- 支持任意类型的值
+  - 提供`Put`/`PutInt64`/`PutBytes`三种方法，适应不同场景，需要与`Get`/`GetInt64`/`GetBytes`配对使用（后两种方法GC开销较小）
 - 复杂对象优先存放指针（注意⚠️一旦放进去不要再修改其字段，即使再拿出来也是，item有可能被其他人同时访问）
   - 如果需要修改，解决方案：取出字段每个单独赋值，或者用[copier做一次深拷贝后在副本上修改](#需要修改部分数据且用对象指针方式存储时)
 - 也可以存放对象（相对于上一个性能差一些，因为拿出去有拷贝）
@@ -120,6 +122,24 @@ c.Del("uid1")
   - 终末或定时调用`Walk`将数据刷到存储
 
 ## 特别场景
+
+### 整型键、整型值和字节数组
+``` go
+// 整型键
+c.Put(ecache.Int64Key(int64(1)), o)
+
+// 整型值
+c.PutInt64("uid1", int64(1))
+if d, ok := c.GetInt64("uid1"); ok {
+    // d为`int64`类型的1
+}
+
+// 字节数组
+c.PutBytes("uid1", b)// b为`[]byte`类型
+if b, ok := c.GetBytes("uid1"); ok {
+    // b为`[]byte`类型
+}
+```
 
 ### LRU-2模式
 
@@ -169,19 +189,21 @@ o.Status = 1      // 修改副本的字段
 //   `action`:PUT, `status`: evicted=-1, updated=0, added=1
 //   `action`:GET, `status`: miss=0, hit=1
 //   `action`:DEL, `status`: miss=0, hit=1
-//   `value`只有在`status`不为0或者`action`为PUT时才有效
-type inspector func(action int, key string, value *interface{}, status int)
-
-// Inspect - 注入一个监听器
-func (c *Cache) Inspect(insptr inspector)
+//   `value`只有在`status`不为0或者`action`为PUT时才不为nil
+type inspector func(action int, key string, value *ecache.Value, status int)
 ```
 
 - 使用方式
 ``` go
-c.Inspect(func(action int, key string, value *interface{}, status int) {
+cache.Inspect(func(action int, key string, value *ecache.Value, status int) {
   // TODO: 实现你想做的事情
   //     监听器会根据注入顺序依次执行
   //     注意⚠️如果有耗时操作，尽量另开channel保证不阻塞当前协程	
+
+  // - 如何获取正确的值 -
+  //   - `Put`:      `*(value.I)`
+  //   - `PutBytes`: `value.B`
+  //   - `PutInt64`: `ecache.ToInt64(value.B)`
 })
 ```
 
@@ -319,7 +341,7 @@ dist.OnDel("user", "uid1")
 
 > `ecache`是[`lrucache`](http://github.com/orca-zhang/lrucache)库的升级版本
 
-- 最下层是用原生map和存双链表的`node`实现的最基础`LRU`（最久未访问）
+- 最下层是用原生map和双链表实现的最基础`LRU`（最久未访问）
   - PS：我实现的其他版本（[go](https://github.com/orca-zhang/lrucache) / [C++](https://github.com/ez8-co/linked_hash) / [js](https://github.com/orca-zhang/ecache.js)）在leetcode都是超越100%的解法
 - 第2层包了分桶策略、并发控制、过期控制（会自动适配等于或者略大于输入大小的2的幂次个桶，便于掩码计算）
 - 第2.5层用很简单的方式实现了`LRU-2`能力，代码不超过20行，直接看源码（搜关键词`LRU-2`）
@@ -352,21 +374,20 @@ dist.OnDel("user", "uid1")
 
 ### 关于性能
 
-- 释放锁不用defer（单方法性能差20倍，看到有宣称`高性能`还用defer的，直接pass吧）
+- 释放锁不用defer
 - 不用异步清理（没意义，分散到写时驱逐更合理，不易抖动）
 - 没有用内存容量来控制（单个item的大小一般都有预估大小，简单控制个数即可）
 - 分桶策略，自动选择2的幂次个桶（分散锁竞争，2的幂次掩码操作更快）
 - key用`string`类型（可扩展性强；语言内建支持引用，更省内存）
 - 不用虚表头（虽然绕脑一些，但是有20%左右提升）
 - 选择`LRU-2`实现`LRU-K`（实现简单，近乎没有额外损耗）
-- 没用整块内存（写满后复用以前的内存效果也很好，整块方式尝试过提升不大、但可读性大大降低）
-- 可以直接存指针（不用序列化，如果使用`[]byte`那优势大大降低）
+- 可以直接存指针（不用序列化，有些场景如果使用`[]byte`那优势大大降低）
 - 使用内部计时器计时（默认100ms精度，每秒校准，剖析发现time.Now()产生临时对象导致GC耗时增加）
+- 双链表用固定分配内存存储，用时间戳置0来标记删除，减少GC（并且同规格比`bigcache`节省内存50%以上）
 
 #### 失败的优化尝试
 
 - key由`string`改为`reflect.StringHeader`，结果：负优化
-- node预分配连续空间，通过游标和freelist决定新申请（是否满）还是复用，结果：不明显
 - 互斥锁改为读写锁，Get请求也会修改数据，访问违例，即使不改数据，结果：读写混合场景负优化
 - 用`time.Timer`实现内部计时器，结果：触发不稳定，后直接用`time.Sleep`实现计时器
 - 分布式一致性组件挂inspector自动同步更新和删除，结果：性能影响较大且需要特殊处理循环调用问题
@@ -375,7 +396,7 @@ dist.OnDel("user", "uid1")
 
 - 就像我在C++版性能剖析器里提到的[性能优化的几个层次](https://github.com/ez8-co/ezpp#性能优化的几个层次)，单从一个层次考虑性能并不高明
 - 《第三层次》里有一句“没有比不存在的东西性能更快的了”（类似奥卡姆剃刀），能砍掉一定不要想着优化
-- 比如为了减少GC大块分配内存，却提供`[]byte`的值存储，意味着必须序列化、拷贝（虽不在库的性能指标里，人家用还是要算，包括：GC、内存、CPU）
+- 比如为了减少GC大块分配内存，却提供`[]byte`的值存储，意味着可能需要序列化、拷贝（虽不在库的性能指标里，人家用还是要算，包括：GC、内存、CPU）
 - 如果序列化的部分可以复用用在协议层拼接，能做到`ZeroCopy`，那也无可厚非，而`ecache`存储指针直接省了额外的部分
 - 我想表达的并不是GC优化不重要，而更多应该结合场景，使用者额外损耗也需要考虑，而非宣称gc-free，结果用起来并非那样
 - 我所崇尚的“暴力美学”是极简，缺陷率和代码量成正比，复杂的东西早晚会被淘汰，`KISS`才是王道
@@ -394,19 +415,56 @@ dist.OnDel("user", "uid1")
 > 问：为什么不用虚表头方式处理双链表？太弱了吧！
 - 答：2019-04-22泄漏的【[lrucache](http://github.com/orca-zhang/lrucache)】被人在V站上扒出来喷过，还真不是不会，现在的写法，虽然比pointer-to-pointer方式读起来绕脑，但是有20%左右的提升哈！（😄没想到吧）
 
-> 问：为什么不提供`int`类型的key的方法？
-- 答：考虑过，但是为了分布式一致性处理的简单，只提供`string`的方法看着也不错，用`fmt.Sprint(i)`也不麻烦。
-
 ## Thanks
 
 感谢在开发过程中进行code review、勘误 & 提出宝贵建议的各位！（排名不分先后）
 
 <table>
   <tr>
-    <td align="center"><a href="https://github.com/askuy"><img src="https://avatars.githubusercontent.com/u/14119383?v=4" width="64px;" alt=""/><br /><sub><b>askuy</b></sub></a></td>
-    <td align="center"><a href="https://github.com/auula"><img src="https://avatars.githubusercontent.com/u/38412458?v=4" width="64px;" alt=""/><br /><sub><b>Leon Ding</b></sub></a></td>
-    <td align="center"><a href="https://github.com/Danceiny"><img src="https://avatars.githubusercontent.com/u/9427454?v=4" width="64px;" alt=""/><br /><sub><b>
-黄振</b></sub></a></td>
-    <td align="center"><a href="https://github.com/IceCream01"><img src="https://avatars.githubusercontent.com/u/19547638?v=4" width="64px;" alt=""/><br /><sub><b>Ice</b></sub></a></td>
+    <td align="center">
+      <a href="https://github.com/askuy">
+        <img src="https://avatars.githubusercontent.com/u/14119383?v=4" width="64px;" alt=""/>
+        <br />
+        <b>askuy</b>
+        <br />
+        <sub><a href="https://github.com/gotomicro/ego">[ego]</a></sub>
+      </a>
+    </td>
+    <td align="center">
+      <a href="https://github.com/auula">
+        <img src="https://avatars.githubusercontent.com/u/38412458?v=4" width="64px;" alt=""/>
+        <br />
+        <b>Leon Ding</b>
+        <br />
+        <sub><a href="https://mp.weixin.qq.com/mp/profile_ext?action=home&__biz=MzI3MzQwNjcyNg==&scene=124#wechat_redirect">[打码匠]</a></sub>
+      </a>
+    </td>
+    <td align="center">
+      <a href="https://github.com/Danceiny">
+        <img src="https://avatars.githubusercontent.com/u/9427454?v=4" width="64px;" alt=""/>
+        <br />
+        <b>黄振</b>
+        <br />
+        <sub>&nbsp;</sub>
+      </a>
+    </td>
+    <td align="center">
+      <a href="https://github.com/IceCream01">
+        <img src="https://avatars.githubusercontent.com/u/19547638?v=4" width="64px;" alt=""/>
+        <br />
+        <b>Ice</b>
+        <br />
+        <sub>&nbsp;</sub>
+      </a>
+    </td>
+    <td align="center">
+      <a href="https://github.com/FishGoddess">
+        <img src="https://avatars.githubusercontent.com/u/36259784?v=4" width="64px;" alt=""/>
+        <br />
+        <b>水不要鱼</b>
+        <br />
+        <sub><a href="https://github.com/FishGoddess/cachego">[cachego]</a></sub>
+      </a>
+    </td>
   </tr>
 </table>
