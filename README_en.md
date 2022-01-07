@@ -123,13 +123,18 @@ c.Del("uid1")
 
 ## Special Scenarios
 
-### integer or bytes value
+### integer key, integer value and bytes value
 ``` go
+// integer key
+c.Put(ecache.Int64Key(int64(1)), o)
+
+// integer value
 c.PutInt64("uid1", int64(1))
 if d, ok := c.GetInt64("uid1"); ok {
     // d is type of `int64` and value is 1
 }
 
+// bytes value
 c.PutBytes("uid1", b)// b is type of `[]byte`
 if b, ok := c.GetBytes("uid1"); ok {
     // b is type of `[]byte`
@@ -371,14 +376,14 @@ dist.OnDel("user", "uid1")
 
 ### About performance
 
-- No defer is needed to release the lock (the performance of a single method is 20 times worse. If you see some people claiming that `high performance` still uses defer, pass it directly).
+- No defer is needed to release the lock.
 - No need to clean up asynchronously (clean-up is meaningless, it is more reasonable to disperse to eviction when writing, and it is not easy to GC thrashing).
 - No memory capacity is used to control (the size of a single item generally has an estimated size, simply control the number).
 - Bucket strategy, automatic selection of power-of-two buckets (reduce lock competition, power-of-two mask operation is faster).
 - Use string type for key (strong scalability; built-in language support for reference, which saves memory).
 - No virtual header for doubly-linked list (although it is a little bit around, but there is an increase of about 20%).
 - Choose `LRU-2` to implement `LRU-K` (simple implementation, almost no additional loss).
-- Store pointers directly (without serialization, the advantage is greatly reduced if you use `[]byte`).
+- Store pointers directly (without serialization, the advantage is greatly reduced if you use `[]byte` in some scenarios).
 - Use internal counter for timing (default 100ms accuracy, calibration per second, `pprof` found that time.Now() generates temporary objects, which leads to increased GC time consumption).
 - -Double-linked list uses fixed allocation memory storage, uses zero timestamp to mark delete, reduces GC (and saves memory by more than 50% compared with `bigcache` in the same specification)
 
@@ -393,7 +398,7 @@ dist.OnDel("user", "uid1")
 
 - As I mentioned in the C++ version of the performance profiler [several levels of performance optimization](https://github.com/ez8-co/ezpp#性能优化的几个层次), consider at only one level is not good.
 - The Third Level says, 'Nothing is faster than nothing' (similar to Occam's razor), you should not come up with optimization if you can remove it.
-- For example, some library want to reduce GC by allocating large block of memory, but provides `[]byte` value storage, which means that it must need extra serialization and copy.
+- For example, some library want to reduce GC by allocating large block of memory, but provides `[]byte` value storage, which means that it may need extra serialization and copy.
 - If the serialized part can be reused in the protocol layer that `ZeroCopy` can be achieved is OK, but things go contrary to one's wishes, and the `ecache` storage pointer directly so that omit the extra cost.
 - What I want to express is that GC optimization is really important, but more that it should be combined with the scene, and extra loss of client-end also needs to be considered, instead of claiming gc-free, the result is not that way.
 - The violent aesthetics I advocate is minimalism, the defect rate is proportional to the amount of code, complex things will be eliminated sooner or later, and `KISS` is the true king.
@@ -411,9 +416,6 @@ dist.OnDel("user", "uid1")
 
 > Q: Why not deal with doubly-linked list in the way of virtual headers? It's bullshxt now!
 - A: The leaked code [[lrucache](http://github.com/orca-zhang/lrucache)] has been challenged on the V2EX on 2019-04-22. It’s really not that I don't know to use virtual headers. Although it is more confusing to read than the pointer-to-pointer method, current way has an improvement of about 20%! (😄did not expect?)
-
-> Q: Why don't you provide a key method of `int` type?
-- A: I've considered it, but for the simplicity of distributed consistency processing, only providing `string` looks good, and using `fmt.Sprint(i)` is not troublesome.
 
 ## Thanks
 
