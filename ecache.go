@@ -29,7 +29,7 @@ func hashBKRD(s string) (hash int32) {
 	return hash
 }
 func maskOfNextPowOf2(cap uint16) uint16 {
-	if cap > 1 && cap&(cap-1) == 0 {
+	if cap > 0 && cap&(cap-1) == 0 {
 		return cap - 1
 	}
 	cap |= (cap >> 1)
