@@ -29,7 +29,7 @@ func hashBKRD(s string) (hash int32) {
 	return hash
 }
 func maskOfNextPowOf2(cap uint16) uint16 {
-	if cap > 1 && cap&(cap-1) == 0 {
+	if cap > 0 && cap&(cap-1) == 0 {
 		return cap - 1
 	}
 	cap |= (cap >> 1)
@@ -38,9 +38,8 @@ func maskOfNextPowOf2(cap uint16) uint16 {
 	return cap | (cap >> 8)
 }
 func int64ToBytes(d int64) []byte {
-	var data [8]byte
-	binary.LittleEndian.PutUint64(data[:], uint64(d))
-	return data[:]
+	var data [10]byte
+	return data[:binary.PutVarint(data[:], int64(d))]
 }
 
 type Value struct {
@@ -174,8 +173,8 @@ func (c *Cache) put(key string, i *interface{}, b []byte) {
 
 // ToInt64 - convert bytes to int64
 func ToInt64(b []byte) (int64, bool) {
-	if len(b) >= 8 {
-		return int64(binary.LittleEndian.Uint64(b)), true
+	if i, n := binary.Varint(b); n > 0 {
+		return i, true
 	}
 	return 0, false
 }
