@@ -1,6 +1,7 @@
 package ecache
 
 import (
+	"bytes"
 	"container/list"
 	"fmt"
 	"sync"
@@ -400,6 +401,50 @@ func TestWalk(t *testing.T) {
 	if len(m) > 0 {
 		fmt.Println(m)
 		t.Error("case failed")
+	}
+}
+
+func TestPutGet(t *testing.T) {
+	lc := NewLRUCache(1, 10, time.Second)
+	lc.Put("1", "1")
+	if v, _ := lc.Get("1"); v != "1" {
+		t.Error("case 1 failed")
+	}
+	lc.Put("1", nil)
+	if v, ok := lc.Get("1"); !ok || v != nil {
+		t.Error("case 2 failed")
+	}
+
+	lc.PutInt64("2", int64(1))
+	if v, _ := lc.GetInt64("2"); v != int64(1) {
+		t.Error("case 3 failed")
+	}
+	lc.PutInt64("2", int64(0))
+	if v, _ := lc.GetInt64("2"); v != int64(0) {
+		t.Error("case 4 failed")
+	}
+	lc.PutInt64("2", int64(123456))
+	if v, _ := lc.GetInt64("2"); v != int64(123456) {
+		t.Error("case 5 failed")
+	}
+	lc.PutInt64("2", int64(0x7FFFFFFFFFFFFFFF))
+	if v, _ := lc.GetInt64("2"); v != int64(0x7FFFFFFFFFFFFFFF) {
+		t.Error("case 6 failed")
+	}
+	lc.PutInt64("2", int64(^0x7FFFFFFFFFFFFFFF))
+	if v, _ := lc.GetInt64("2"); v != int64(^0x7FFFFFFFFFFFFFFF) {
+		t.Error("case 7 failed")
+	}
+
+	b := []byte{1, 2, 3, 4, 5, 6}
+	lc.PutBytes("3", b)
+	if v, _ := lc.GetBytes("3"); !bytes.Equal(b, v) {
+		t.Error("case 8 failed")
+	}
+
+	lc.PutBytes("3", nil)
+	if v, _ := lc.GetBytes("3"); !bytes.Equal(nil, v) {
+		t.Error("case 9 failed")
 	}
 }
 
