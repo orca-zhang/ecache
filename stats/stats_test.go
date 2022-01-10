@@ -64,7 +64,7 @@ func TestLRU2Cache(t *testing.T) {
 
 	v, _ = Stats().Load("lc")
 	node = v.(*StatsNode)
-	if node.HitRate()-0.25 > 1e-6 {
+	if node.HitRate()-0.75 > 1e-6 {
 		t.Error("case 1 failed")
 	}
 
