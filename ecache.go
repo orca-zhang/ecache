@@ -38,15 +38,15 @@ func maskOfNextPowOf2(cap uint16) uint16 {
 	return cap | (cap >> 8)
 }
 
-type Value struct {
-	I *interface{} // interface
-	B []byte       // bytes
+type value struct {
+	i *interface{} // interface
+	b []byte       // bytes
 }
 
 type node struct {
-	k  string
-	v  Value
-	ts int64 // nano timestamp
+	k        string
+	v        value
+	expireAt int64 // nano timestamp, expireAt=0 if marked as deleted, `createdAt`=`expireAt`-`expiration`
 }
 
 type cache struct {
@@ -61,22 +61,22 @@ func create(cap uint16) *cache {
 }
 
 // put a cache item into lru cache, if added return 1, updated return 0
-func (c *cache) put(k string, i *interface{}, b []byte, on inspector) (*Value, int) {
+func (c *cache) put(k string, i *interface{}, b []byte, expireAt int64, on inspector) int {
 	if x, ok := c.hmap[k]; ok {
-		c.m[x-1].v.I, c.m[x-1].v.B, c.m[x-1].ts = i, b, now()
+		c.m[x-1].v.i, c.m[x-1].v.b, c.m[x-1].expireAt = i, b, expireAt
 		c.ajust(x, p, n) // refresh to head
-		return &c.m[x-1].v, 0
+		return 0
 	}
 
 	if c.last == uint16(cap(c.m)) {
 		tail := &c.m[c.dlnk[0][p]-1]
-		if (*tail).ts > 0 { // do not notify for mark delete ones
-			on(PUT, (*tail).k, &(*tail).v, -1)
+		if (*tail).expireAt > 0 { // do not notify for mark delete ones
+			on(PUT, (*tail).k, (*tail).v.i, (*tail).v.b, -1)
 		}
 		delete(c.hmap, (*tail).k)
-		c.hmap[k], (*tail).k, (*tail).v.I, (*tail).v.B, (*tail).ts = c.dlnk[0][p], k, i, b, now() // reuse to reduce gc
-		c.ajust(c.dlnk[0][p], p, n)                                                               // refresh to head
-		return &(*tail).v, 1
+		c.hmap[k], (*tail).k, (*tail).v.i, (*tail).v.b, (*tail).expireAt = c.dlnk[0][p], k, i, b, expireAt // reuse to reduce gc
+		c.ajust(c.dlnk[0][p], p, n)                                                                        // refresh to head
+		return 1
 	}
 
 	c.last++
@@ -85,8 +85,8 @@ func (c *cache) put(k string, i *interface{}, b []byte, on inspector) (*Value, i
 	} else {
 		c.dlnk[c.dlnk[0][n]][p] = c.last
 	}
-	c.m[c.last-1].k, c.m[c.last-1].v.I, c.m[c.last-1].v.B, c.m[c.last-1].ts, c.dlnk[c.last], c.hmap[k], c.dlnk[0][n] = k, i, b, now(), [2]uint16{0, c.dlnk[0][n]}, c.last, c.last
-	return &c.m[c.last-1].v, 1
+	c.m[c.last-1].k, c.m[c.last-1].v.i, c.m[c.last-1].v.b, c.m[c.last-1].expireAt, c.dlnk[c.last], c.hmap[k], c.dlnk[0][n] = k, i, b, expireAt, [2]uint16{0, c.dlnk[0][n]}, c.last, c.last
+	return 1
 }
 
 // get value of key from lru cache with result
@@ -99,19 +99,19 @@ func (c *cache) get(k string) (*node, int) {
 }
 
 // delete item by key from lru cache
-func (c *cache) del(k string) (*node, int) {
-	if x, ok := c.hmap[k]; ok && c.m[x-1].ts > 0 {
-		c.m[x-1].ts = 0  // mark as deleted
-		c.ajust(x, n, p) // sink to tail
-		return &c.m[x-1], 1
+func (c *cache) del(k string) (_ *node, _ int, e int64) {
+	if x, ok := c.hmap[k]; ok && c.m[x-1].expireAt > 0 {
+		c.m[x-1].expireAt, e = 0, c.m[x-1].expireAt // mark as deleted
+		c.ajust(x, n, p)                            // sink to tail
+		return &c.m[x-1], 1, e
 	}
-	return nil, 0
+	return nil, 0, 0
 }
 
 // calls f sequentially for each valid item in the lru cache
-func (c *cache) walk(walker func(k string, v *Value, ts int64) bool) {
+func (c *cache) walk(walker func(key string, iface *interface{}, bytes []byte, expireAt int64) bool) {
 	for idx := c.dlnk[0][n]; idx != 0; idx = c.dlnk[idx][n] {
-		if c.m[idx-1].ts > 0 && !walker(c.m[idx-1].k, &c.m[idx-1].v, c.m[idx-1].ts) {
+		if c.m[idx-1].expireAt > 0 && !walker(c.m[idx-1].k, c.m[idx-1].v.i, c.m[idx-1].v.b, c.m[idx-1].expireAt) {
 			return
 		}
 	}
@@ -139,7 +139,7 @@ type Cache struct {
 // optional `expiration` is item alive time (and we only use lazy eviction here), default `0` stands for permanent
 func NewLRUCache(bucketCnt, capPerBkt uint16, expiration ...time.Duration) *Cache {
 	mask := maskOfNextPowOf2(bucketCnt)
-	c := &Cache{make([]sync.Mutex, mask+1), make([][2]*cache, mask+1), 0, func(int, string, *Value, int) {}, int32(mask)}
+	c := &Cache{make([]sync.Mutex, mask+1), make([][2]*cache, mask+1), 0, func(int, string, *interface{}, []byte, int) {}, int32(mask)}
 	for i := range c.insts {
 		c.insts[i][0] = create(capPerBkt)
 	}
@@ -162,9 +162,9 @@ func (c *Cache) LRU2(capPerBkt uint16) *Cache {
 func (c *Cache) put(key string, i *interface{}, b []byte) {
 	idx := hashBKRD(key) & c.mask
 	c.locks[idx].Lock()
-	v, status := c.insts[idx][0].put(key, i, b, c.on)
-	c.on(PUT, key, v, status)
+	status := c.insts[idx][0].put(key, i, b, now()+int64(c.expiration), c.on)
 	c.locks[idx].Unlock()
+	c.on(PUT, key, i, b, status)
 }
 
 // ToInt64 - convert bytes to int64
@@ -213,7 +213,7 @@ func (c *Cache) GetInt64(key string) (int64, bool) {
 }
 
 func (c *Cache) _get(key string, idx, level int32) (*node, int) {
-	if n, s := c.insts[idx][level].get(key); s > 0 && !((c.expiration > 0 && now()-n.ts > int64(c.expiration)) || n.ts <= 0) {
+	if n, s := c.insts[idx][level].get(key); s > 0 && n.expireAt > 0 && (c.expiration <= 0 || now() < n.expireAt) {
 		return n, s // no necessary to remove the expired item here, otherwise will cause GC thrashing
 	}
 	return nil, 0
@@ -222,24 +222,24 @@ func (c *Cache) _get(key string, idx, level int32) (*node, int) {
 func (c *Cache) get(key string) (i *interface{}, b []byte, _ bool) {
 	idx := hashBKRD(key) & c.mask
 	c.locks[idx].Lock()
-	n, s := (*node)(nil), 0
+	n, s, e := (*node)(nil), 0, int64(0)
 	if c.insts[idx][1] == nil { // (if LRU-2 mode not support, loss is little)
 		n, s = c._get(key, idx, 0) // normal lru mode
 	} else { // LRU-2 mode
-		if n, s = c.insts[idx][0].del(key); s <= 0 {
+		if n, s, e = c.insts[idx][0].del(key); s <= 0 {
 			n, s = c._get(key, idx, 1) // re-find in level-1
 		} else {
-			c.insts[idx][1].put(key, n.v.I, n.v.B, c.on) // find in level-0, move to level-1
+			c.insts[idx][1].put(key, n.v.i, n.v.b, e, c.on) // find in level-0, move to level-1
 		}
 	}
 	if s <= 0 {
 		c.locks[idx].Unlock()
-		c.on(GET, key, nil, 0)
+		c.on(GET, key, nil, nil, 0)
 		return
 	}
-	c.on(GET, key, &n.v, 1)
-	i, b = n.v.I, n.v.B
+	i, b = n.v.i, n.v.b
 	c.locks[idx].Unlock()
+	c.on(GET, key, i, b, 1)
 	return i, b, true
 }
 
@@ -247,23 +247,23 @@ func (c *Cache) get(key string) (i *interface{}, b []byte, _ bool) {
 func (c *Cache) Del(key string) {
 	idx := hashBKRD(key) & c.mask
 	c.locks[idx].Lock()
-	n, s := c.insts[idx][0].del(key)
+	n, s, e := c.insts[idx][0].del(key)
 	if c.insts[idx][1] != nil { // (if LRU-2 mode not support, loss is little)
-		if n2, s2 := c.insts[idx][1].del(key); n2 != nil && (n == nil || n.ts < n2.ts) { // callback latest added one if both exists
+		if n2, s2, e2 := c.insts[idx][1].del(key); n2 != nil && (n == nil || e < e2) { // callback latest added one if both exists
 			n, s = n2, s2
 		}
 	}
 	if s > 0 {
-		c.on(DEL, key, &n.v, 1)
-		n.v.I, n.v.B = nil, nil // release now
+		c.on(DEL, key, n.v.i, n.v.b, 1)
+		n.v.i, n.v.b = nil, nil // release now
 	} else {
-		c.on(DEL, key, nil, 0)
+		c.on(DEL, key, nil, nil, 0)
 	}
 	c.locks[idx].Unlock()
 }
 
 // Walk - calls f sequentially for each valid item in the lru cache, return false to stop iteration for every bucket
-func (c *Cache) Walk(walker func(k string, v *Value, ts int64) bool) {
+func (c *Cache) Walk(walker func(key string, iface *interface{}, bytes []byte, expireAt int64) bool) {
 	for i := range c.insts {
 		c.locks[i].Lock()
 		if c.insts[i][0].walk(walker); c.insts[i][1] != nil {
@@ -281,13 +281,13 @@ const (
 
 // inspector - can be used to statistics cache hit/miss rate or other scenario like ringbuf queue
 //   more details about every parameter: https://github.com/orca-zhang/ecache/blob/master/README_en.md#inject-an-inspector
-type inspector func(action int, key string, value *Value, status int)
+type inspector func(action int, key string, iface *interface{}, bytes []byte, status int)
 
 // Inspect - to inspect the actions
 func (c *Cache) Inspect(insptr inspector) {
 	old := c.on
-	c.on = func(action int, key string, value *Value, status int) {
-		old(action, key, value, status) // call as the declared order, old first
-		insptr(action, key, value, status)
+	c.on = func(action int, key string, iface *interface{}, bytes []byte, status int) {
+		old(action, key, iface, bytes, status) // call as the declared order, old first
+		insptr(action, key, iface, bytes, status)
 	}
 }
