@@ -15,13 +15,21 @@ type StatsNode struct {
 	Evicted, Updated, Added, GetMiss, GetHit, DelMiss, DelHit uint64
 }
 
+// HitRate
+func (s *StatsNode) HitRate() float64 {
+	if s.GetHit == 0 && s.GetMiss == 0 {
+		return 0.0
+	}
+	return float64(s.GetHit) / float64(s.GetHit+s.GetMiss)
+}
+
 // Bind - to stats a cache
 // `pool` can be used to classify instances that store same items
 // `caches` is cache instances to be binded
 func Bind(pool string, caches ...*ecache.Cache) error {
 	v, _ := m.LoadOrStore(pool, &StatsNode{})
 	for _, c := range caches {
-		c.Inspect(func(action int, _ string, _ *ecache.Value, status int) {
+		c.Inspect(func(action int, _ string, _ *interface{}, _ []byte, status int) {
 			// very, very, very low-cost for stats
 			atomic.AddUint64((*uint64)(unsafe.Pointer(uintptr(unsafe.Pointer(v.(*StatsNode)))+uintptr(status+action*2-1)*unsafe.Sizeof(&status))), 1)
 		})
