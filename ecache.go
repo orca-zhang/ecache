@@ -37,11 +37,6 @@ func maskOfNextPowOf2(cap uint16) uint16 {
 	cap |= (cap >> 4)
 	return cap | (cap >> 8)
 }
-func int64ToBytes(d int64) []byte {
-	var data [8]byte
-	binary.LittleEndian.PutUint64(data[:], uint64(d))
-	return data[:]
-}
 
 type Value struct {
 	I *interface{} // interface
@@ -180,14 +175,15 @@ func ToInt64(b []byte) (int64, bool) {
 	return 0, false
 }
 
-// Int64Key - int64 to pseudo string
-func Int64Key(d int64) string { return string(int64ToBytes(d)) }
-
 // Put - put an item into cache
 func (c *Cache) Put(key string, val interface{}) { c.put(key, &val, nil) }
 
 // PutInt64 - put a digit item into cache
-func (c *Cache) PutInt64(key string, d int64) { c.put(key, nil, int64ToBytes(d)) }
+func (c *Cache) PutInt64(key string, d int64) {
+	var data [8]byte
+	binary.LittleEndian.PutUint64(data[:], uint64(d))
+	c.put(key, nil, data[:])
+}
 
 // PutBytes - put a bytes item into cache
 func (c *Cache) PutBytes(key string, b []byte) { c.put(key, nil, b) }
