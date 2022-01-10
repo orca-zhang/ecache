@@ -101,7 +101,7 @@ c.Del("uid1")
   - 第一个参数是桶的个数，用来分散锁的粒度，每个桶都会使用独立的锁，最大值为65535，支持65536个实例
     - 不用担心，随意设置一个就好，`ecache`会找一个合适的数字便于后面掩码计算
   - 第二个参数是每个桶所能容纳的item个数上限，最大值为65535
-    - 意味着`ecache`全部写满的情况下，应该有`第一个参数 X 第二个参数`个item，也即最多42亿个
+    - 意味着`ecache`全部写满的情况下，应该有`第一个参数 X 第二个参数`个item，最多能支持存储42亿个item
   - \[可选\]第三个参数是每个item的过期时间
     - `ecache`使用内部计时器提升性能，默认100ms精度，每秒校准
     - 不传或者传`0`，代表永久有效
@@ -126,7 +126,7 @@ c.Del("uid1")
 ### 整型键、整型值和字节数组
 ``` go
 // 整型键
-c.Put(ecache.Int64Key(int64(1)), o)
+c.Put(strconv.FormatInt(d), o) // d为`int64`类型
 
 // 整型值
 c.PutInt64("uid1", int64(1))
@@ -189,21 +189,21 @@ o.Status = 1      // 修改副本的字段
 //   `action`:PUT, `status`: evicted=-1, updated=0, added=1
 //   `action`:GET, `status`: miss=0, hit=1
 //   `action`:DEL, `status`: miss=0, hit=1
-//   `value`只有在`status`不为0或者`action`为PUT时才不为nil
-type inspector func(action int, key string, value *ecache.Value, status int)
+//   `iface`/`bytes`只有在`status`不为0或者`action`为PUT时才不为nil
+type inspector func(action int, key string, iface *interface{}, bytes []byte, status int)
 ```
 
 - 使用方式
 ``` go
-cache.Inspect(func(action int, key string, value *ecache.Value, status int) {
+cache.Inspect(func(action int, key string, iface *interface{}, bytes []byte, status int) {
   // TODO: 实现你想做的事情
   //     监听器会根据注入顺序依次执行
   //     注意⚠️如果有耗时操作，尽量另开channel保证不阻塞当前协程	
 
   // - 如何获取正确的值 -
-  //   - `Put`:      `*(value.I)`
-  //   - `PutBytes`: `value.B`
-  //   - `PutInt64`: `ecache.ToInt64(value.B)`
+  //   - `Put`:      `*iface`
+  //   - `PutBytes`: `bytes`
+  //   - `PutInt64`: `ecache.ToInt64(bytes)`
 })
 ```
 
@@ -334,7 +334,7 @@ dist.OnDel("user", "uid1")
   - 用户头像、昵称、商品库存(实际下单会在db再次检查)等
   - 修改的配置（过期时间10秒，那最多延迟10秒生效）
 - 缓冲队列：合并更新以减少刷盘次数
-  - 通过给查询打补丁来实现强一致（分布式情况下，需要在负载均衡层保证同用户/设备调度到同一节点）
+  - 可以通过给查询打补丁来实现强一致（分布式情况下，需要在负载均衡层保证同用户/设备调度到同一节点）
   - 可以重建或容忍断电丢失的情况下
 
 ## 设计思路
@@ -343,7 +343,7 @@ dist.OnDel("user", "uid1")
 
 - 最下层是用原生map和双链表实现的最基础`LRU`（最久未访问）
   - PS：我实现的其他版本（[go](https://github.com/orca-zhang/lrucache) / [C++](https://github.com/ez8-co/linked_hash) / [js](https://github.com/orca-zhang/ecache.js)）在leetcode都是超越100%的解法
-- 第2层包了分桶策略、并发控制、过期控制（会自动适配等于或者略大于输入大小的2的幂次个桶，便于掩码计算）
+- 第2层包了分桶策略、并发控制、过期控制（会自动选择2的幂次个桶，便于掩码计算）
 - 第2.5层用很简单的方式实现了`LRU-2`能力，代码不超过20行，直接看源码（搜关键词`LRU-2`）
 
 ### 什么是LRU
