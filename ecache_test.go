@@ -414,37 +414,46 @@ func TestPutGet(t *testing.T) {
 	if v, ok := lc.Get("1"); !ok || v != nil {
 		t.Error("case 2 failed")
 	}
+	if _, ok := lc.Get("no1"); ok {
+		t.Error("case 3 failed")
+	}
 
 	lc.PutInt64("2", int64(1))
 	if v, _ := lc.GetInt64("2"); v != int64(1) {
-		t.Error("case 3 failed")
+		t.Error("case 4 failed")
 	}
 	lc.PutInt64("2", int64(0))
 	if v, _ := lc.GetInt64("2"); v != int64(0) {
-		t.Error("case 4 failed")
+		t.Error("case 5 failed")
 	}
 	lc.PutInt64("2", int64(123456))
 	if v, _ := lc.GetInt64("2"); v != int64(123456) {
-		t.Error("case 5 failed")
+		t.Error("case 6 failed")
 	}
 	lc.PutInt64("2", int64(0x7FFFFFFFFFFFFFFF))
 	if v, _ := lc.GetInt64("2"); v != int64(0x7FFFFFFFFFFFFFFF) {
-		t.Error("case 6 failed")
+		t.Error("case 7 failed")
 	}
 	lc.PutInt64("2", int64(^0x7FFFFFFFFFFFFFFF))
 	if v, _ := lc.GetInt64("2"); v != int64(^0x7FFFFFFFFFFFFFFF) {
-		t.Error("case 7 failed")
+		t.Error("case 8 failed")
+	}
+	if _, ok := lc.GetInt64("no2"); ok {
+		t.Error("case 9 failed")
 	}
 
 	b := []byte{1, 2, 3, 4, 5, 6}
 	lc.PutBytes("3", b)
 	if v, _ := lc.GetBytes("3"); !bytes.Equal(b, v) {
-		t.Error("case 8 failed")
+		t.Error("case 10 failed")
 	}
 
 	lc.PutBytes("3", nil)
 	if v, _ := lc.GetBytes("3"); !bytes.Equal(nil, v) {
-		t.Error("case 9 failed")
+		t.Error("case 11 failed")
+	}
+	if _, ok := lc.GetBytes("no3"); ok {
+		t.Error("case 12 failed")
 	}
 }
 
