@@ -12,6 +12,13 @@ import (
 func TestLRU2Cache(t *testing.T) {
 	lc := ecache.NewLRUCache(1, 3, 10*time.Second).LRU2(1)
 	Bind("lc", lc)
+
+	v, _ := Stats().Load("lc")
+	node := v.(*StatsNode)
+	if node.HitRate() > 1e-6 {
+		t.Error("case 1 failed")
+	}
+
 	lc.Put("1", "1")              // Added
 	lc.Put("2", "2")              // Added
 	lc.Put("3", "3")              // Added
@@ -54,6 +61,12 @@ func TestLRU2Cache(t *testing.T) {
 		}
 		return true
 	})
+
+	v, _ = Stats().Load("lc")
+	node = v.(*StatsNode)
+	if node.HitRate()-0.25 > 1e-6 {
+		t.Error("case 1 failed")
+	}
 
 	lc.Put("6", "6")              // Added
 	lc.Put("7", "7")              // Added, Evicted
@@ -98,8 +111,8 @@ func TestLRU2Cache(t *testing.T) {
 		return true
 	})
 
-	v, _ := Stats().Load("lc")
-	node := v.(*StatsNode)
+	v, _ = Stats().Load("lc")
+	node = v.(*StatsNode)
 	if node.HitRate()-0.5 > 1e-6 {
 		t.Error("case 1 failed")
 	}

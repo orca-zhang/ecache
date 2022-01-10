@@ -455,6 +455,29 @@ func TestPutGet(t *testing.T) {
 	if _, ok := lc.GetBytes("no3"); ok {
 		t.Error("case 12 failed")
 	}
+
+	lc.PutBytes("4", []byte{0})
+	if _, ok := lc.GetInt64("4"); ok {
+		t.Error("case 13 failed")
+	}
+
+	lc.PutBytes("5", []byte{0x88, 0x77, 0x66, 0x55, 0x44, 0x33, 0x22, 0x11})
+	if v, ok := lc.GetBytes("5"); ok {
+		if i, _ := ToInt64(v); i != 0x1122334455667788 {
+			t.Error("case 14 failed")
+		}
+	} else {
+		t.Error("case 15 failed")
+	}
+
+	lc.PutInt64("6", 0x1122334455667788)
+	if v, ok := lc.GetBytes("6"); ok {
+		if !bytes.Equal(v, []byte{0x88, 0x77, 0x66, 0x55, 0x44, 0x33, 0x22, 0x11}) {
+			t.Error("case 16 failed")
+		}
+	} else {
+		t.Error("case 17 failed")
+	}
 }
 
 func TestLRU2Cache(t *testing.T) {
