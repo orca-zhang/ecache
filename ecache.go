@@ -206,8 +206,8 @@ func (c *Cache) GetBytes(key string) ([]byte, bool) {
 
 // GetInt64 - get value of key from cache with result
 func (c *Cache) GetInt64(key string) (int64, bool) {
-	if _, b, ok := c.get(key); ok {
-		return ToInt64(b)
+	if _, b, ok := c.get(key); ok && len(b) >= 8 {
+		return int64(binary.LittleEndian.Uint64(b)), true
 	}
 	return 0, false
 }
@@ -222,10 +222,11 @@ func (c *Cache) _get(key string, idx, level int32) (*node, int) {
 func (c *Cache) get(key string) (i *interface{}, b []byte, _ bool) {
 	idx := hashBKRD(key) & c.mask
 	c.locks[idx].Lock()
-	n, s, e := (*node)(nil), 0, int64(0)
+	n, s := (*node)(nil), 0
 	if c.insts[idx][1] == nil { // (if LRU-2 mode not support, loss is little)
 		n, s = c._get(key, idx, 0) // normal lru mode
 	} else { // LRU-2 mode
+		e := int64(0)
 		if n, s, e = c.insts[idx][0].del(key); s <= 0 {
 			n, s = c._get(key, idx, 1) // re-find in level-1
 		} else {
