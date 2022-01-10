@@ -101,7 +101,7 @@ c.Del("uid1")
   - First parameter is the number of buckets, each bucket will use an independent lock, max to 65535(for 65536 buckets)
     - Don't worry, just set as you want, `ecache` will find a suitable number which is convenient for mask calculation later
   - Second parameter is the number of items that each bucket can hold, max to 65535
-    - When `ecache` is full, there should be `first parameter X second parameter` item, max to 4.2 billion items
+    - When `ecache` is full, there should be `first parameter X second parameter` item, can store max to 4.2 billion items
   - \[Optional\]Third parameter is the expiration time of each item
     - `ecache` uses internal counter to improve performance, default 100ms accuracy, calibration every second
     - No parameter or pass `0`, means permanent
@@ -126,7 +126,7 @@ c.Del("uid1")
 ### integer key, integer value and bytes value
 ``` go
 // integer key
-c.Put(ecache.Int64Key(int64(1)), o)
+c.Put(strconv.FormatInt(d), o) // d is type of `int64`
 
 // integer value
 c.PutInt64("uid1", int64(1))
@@ -189,21 +189,21 @@ o.Status = 1      // Modify the field of the copy
 // `action`:PUT, `status`: evicted=-1, updated=0, added=1
 // `action`:GET, `status`: miss=0, hit=1
 // `action`:DEL, `status`: miss=0, hit=1
-// `value` is not `nil` when `status` is not 0 or `action` is PUT
-type inspector func(action int, key string, value *ecache.Value, status int)
+// `iface`/`bytes` is not `nil` when `status` is not 0 or `action` is PUT
+type inspector func(action int, key string, iface *interface{}, bytes []byte, status int)
 ```
 
 - How to use
 ``` go
-cache.Inspect(func(action int, key string, value *ecache.Value, status int) {
+cache.Inspect(func(action int, key string, iface *interface{}, bytes []byte, status int) {
    // TODO: add what you want to do
    //     Inspector will be executed in sequence according to the injection order
    //     Note:⚠️ If there is a operation that takes a long time, try to transfer job to another channel to ensure not blocking current coroutine.
    
    // - how to fetch right value -
-   //   - `Put`:      `*(value.I)`
-   //   - `PutBytes`: `value.B`
-   //   - `PutInt64`: `ecache.ToInt64(value.B)`
+  //   - `Put`:      `*iface`
+  //   - `PutBytes`: `bytes`
+  //   - `PutInt64`: `ecache.ToInt64(bytes)`
 })
 ```
 
@@ -334,7 +334,7 @@ dist.OnDel("user", "uid1")
    - Such as user avatar, nickname, product inventory (the actual order will be checked again in db), etc.
    - Modified configuration (expiration time is 10 seconds, then it will take effect with a maximum delay of 10 seconds)
 - Buffer queue: merge updates to reduce disk flushes
-   - Achieve strong consistency through patching query with cache diff (in the case of distributed, it is necessary to ensure that the same user/device is balanced to the same node at the load balancing layer)
+   - Can achieve strong consistency by patching query with cache diff (in the case of distributed, it is necessary to ensure that the same user/device is balanced to the same node at the load balancing layer)
    - Data can be rebuilt or tolerate loss of power outage
 
 ## Design Ideas
