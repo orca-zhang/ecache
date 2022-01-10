@@ -10,7 +10,7 @@ import (
 )
 
 func TestLRU2Cache(t *testing.T) {
-	lc := ecache.NewLRUCache(1, 3, 1*time.Second).LRU2(1)
+	lc := ecache.NewLRUCache(1, 3, 10*time.Second).LRU2(1)
 	Bind("lc", lc)
 	lc.Put("1", "1")              // Added
 	lc.Put("2", "2")              // Added
@@ -97,10 +97,16 @@ func TestLRU2Cache(t *testing.T) {
 		}
 		return true
 	})
+
+	v, _ := Stats().Load("lc")
+	node := v.(*StatsNode)
+	if node.HitRate()-0.5 > 1e-6 {
+		t.Error("case 1 failed")
+	}
 }
 
 func TestConcurrent(t *testing.T) {
-	lc := ecache.NewLRUCache(4, 1, 2*time.Second).LRU2(1)
+	lc := ecache.NewLRUCache(4, 1, 10*time.Second).LRU2(1)
 	Bind("aaaa", lc)
 	var wg sync.WaitGroup
 	for index := 0; index < 1000000; index++ {
