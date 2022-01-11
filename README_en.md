@@ -115,6 +115,7 @@ c.Del("uid1")
 - Objects can also be stored directly (compared to the previous one, the performance is worse because there are copy operations when taken out)
 - The larger cached objects, the better, the upper level of the business, the better (save memory assembly and data organization time)
 - If you don’t want to erase the hot data due to traversal requests, you can switch to [`LRU-2` mode](#LRU-2-mode), there may be very little loss (💬 [What Is LRU-2](#What-Is-LRU-2))
+  - - The size of `LRU2` and `LRU` is set to 1/4 and 3/4, which may perform better。
 - One instance can store multiple types of objects, try adding a prefix when formatting the key and separating it with a colon
 - For scenes with large concurrent visits, try `256`, `1024` buckets, or even more
 - Can be used as a **buffer queue** to merge updates to reduce disk flushes (data can be rebuilt or tolerate loss of power outage)
@@ -126,7 +127,7 @@ c.Del("uid1")
 ### integer key, integer value and bytes value
 ``` go
 // integer key
-c.Put(strconv.FormatInt(d), o) // d is type of `int64`
+c.Put(strconv.FormatInt(d, 10), o) // d is type of `int64`
 
 // integer value
 c.PutInt64("uid1", int64(1))
@@ -358,6 +359,7 @@ dist.OnDel("user", "uid1")
 - The target scenario is that, for example, some traversal queries will evict some hot items that we need in the future.
 - For the sake of simplicity, what we have implemented here is `LRU-2`, that is, the second visit is placed in the hot queue, and the count of visits is not recorded.
 - It used to optimize the cache hit rate of hot keys.
+- Very similar to [mysql's buffer pool lru algorithm](https://dev.mysql.com/doc/refman/5.7/en/innodb-buffer-pool.html).
 
 ### Principle of Distributed Consistency Plugin
 
