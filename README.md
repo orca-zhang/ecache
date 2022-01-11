@@ -41,7 +41,7 @@
 
 ## 基准性能
 
-> [👁️‍🗨️点我看用例](https://github.com/benchplus/gocache) [👁️‍🗨️点我看结果](https://benchplus.github.io/gocache/dev/bench/) （数值越低越好）
+> [👁️‍🗨️点我看用例](https://github.com/benchplus/gocache) [👁️‍🗨️点我看结果](https://benchplus.github.io/gocache/dev/bench/) （除了缓存命中率数值越低越好）
 ![](https://github.com/orca-zhang/ecache/raw/master/doc/benchmark.png)
 
 > gc pause测试结果 [代码由`bigcache`提供](https://github.com/allegro/bigcache-bench)（数值越低越好）
