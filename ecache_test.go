@@ -478,6 +478,10 @@ func TestPutGet(t *testing.T) {
 	} else {
 		t.Error("case 17 failed")
 	}
+
+	if _, ok := ToInt64([]byte{0}); ok {
+		t.Error("case 18 failed")
+	}
 }
 
 func TestLRU2Cache(t *testing.T) {
