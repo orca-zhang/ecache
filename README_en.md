@@ -41,7 +41,7 @@
 
 ## Benchmarks
 
-> [👁️‍🗨️click me to see cases](https://github.com/benchplus/gocache) [👁️‍🗨️click me to see results](https://benchplus.github.io/gocache/dev/bench/) (the lower the better)
+> [👁️‍🗨️click me to see cases](https://github.com/benchplus/gocache) [👁️‍🗨️click me to see results](https://benchplus.github.io/gocache/dev/bench/) (the lower the better except cache hit rate)
 ![](https://github.com/orca-zhang/ecache/raw/master/doc/benchmark.png)
 
 > gc pause test result [code provided by `bigcache`](https://github.com/allegro/bigcache-bench) (the lower the better)
