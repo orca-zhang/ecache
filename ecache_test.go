@@ -602,3 +602,24 @@ func TestInspect(t *testing.T) {
 	lc.Del("6")
 	lc.Del("10")
 }
+
+func TestForIssue7(t *testing.T) {
+	lc := NewLRUCache(16, 65535, 100*time.Millisecond)
+	var wg sync.WaitGroup
+	for index := 0; index < 1000000; index++ {
+		wg.Add(3)
+		go func() {
+			lc.Put("1", "2")
+			wg.Done()
+		}()
+		go func() {
+			lc.Get("1")
+			wg.Done()
+		}()
+		go func() {
+			lc.Del("1")
+			wg.Done()
+		}()
+	}
+	wg.Wait()
+}
