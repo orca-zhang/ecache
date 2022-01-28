@@ -217,15 +217,15 @@ cache.Inspect(func(action int, key string, iface *interface{}, bytes []byte, sta
 
 ``` go
   // 只会遍历缓存中存在且未过期的项
-	cache.Walk(func(key string, iface *interface{}, bytes []byte, expireAt int64) bool {
+  cache.Walk(func(key string, iface *interface{}, bytes []byte, expireAt int64) bool {
     // `key`是值，`iface`/`bytes`是值，`expireAt`是过期时间
 
     // - 如何获取正确的值 -
     //   - `Put`:      `*iface`
     //   - `PutBytes`: `bytes`
     //   - `PutInt64`: `ecache.ToInt64(bytes)`
-	  return true // 是否继续遍历
-	})
+    return true // 是否继续遍历
+  })
 ```
 
 ## 统计缓存使用情况
