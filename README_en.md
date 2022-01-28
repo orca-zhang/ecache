@@ -47,6 +47,11 @@
 > gc pause test result [code provided by `bigcache`](https://github.com/allegro/bigcache-bench) (the lower the better)
 ![](https://github.com/orca-zhang/ecache/raw/master/doc/gc.png)
 
+### Stablity validation in production environment
+- [`Confirmed`]Official Account Backend(hundreds QPS), user & order info, configrations.
+- [`WIP`]Push Platform(tens of thousands QPS), system configrations, deduplication, fixed info cache like app info and etc.
+- [`TBD`]Comment Platform(tens of thousands QPS), user info and distributed consistency plugin for user avatar & nickname.
+
 ## How To Use
 
 #### Import Package (almost 5s)
@@ -102,7 +107,7 @@ c.Del("uid1")
     - Don't worry, just set as you want, `ecache` will find a suitable number which is convenient for mask calculation later
   - Second parameter is the number of items that each bucket can hold, max to 65535
     - When `ecache` is full, there should be `first parameter X second parameter` item, can store max to 4.2 billion items
-  - \[Optional\]Third parameter is the expiration time of each item
+  - \[`Optional`\]Third parameter is the expiration time of each item
     - `ecache` uses internal counter to improve performance, default 100ms accuracy, calibration every second
     - No parameter or pass `0`, means permanent
 
@@ -110,17 +115,17 @@ c.Del("uid1")
 
 - Support any type of value
   - Provides `Put`/`PutInt64`/`PutBytes` three methods to adapt to different scenarios and need to be used in pairs with `Get`/`GetInt64`/`GetBytes` (the latter two methods have less GC cost)
-- Store pointers for complex objects (Note: ⚠️ Do not modify its fields once it is put in, even if it is taken out again, because the item may be accessed by other people at the same time)
-  - If you need to modify, the solution: take out each individual assignment of the field, or use [copier to make a deep copy and modify on the copy](#need-to-modify-and-store-the-object-pointer)
-- Objects can also be stored directly (compared to the previous one, the performance is worse because there are copy operations when taken out)
-- The larger cached objects, the better, the upper level of the business, the better (save memory assembly and data organization time)
+  - Store pointers for complex objects (Note: ⚠️ Do not modify its fields once it is put in, even if it is taken out again, because the item may be accessed by other people at the same time)
+    - If you need to modify, the solution: take out each individual assignment of the field, or use [copier to make a deep copy and modify on the copy](#need-to-modify-and-store-the-object-pointer)
+    - Objects can also be stored directly (compared to the previous one, the performance is worse because there are copy operations when taken out)
+    - The larger cached objects, the better, the upper level of the business, the better (save memory assembly and data organization time)
 - If you don’t want to erase the hot data due to traversal requests, you can switch to [`LRU-2` mode](#LRU-2-mode), there may be very little loss (💬 [What Is LRU-2](#What-Is-LRU-2))
   - - The size of `LRU2` and `LRU` is set to 1/4 and 3/4, which may perform better。
 - One instance can store multiple types of objects, try adding a prefix when formatting the key and separating it with a colon
 - For scenes with large concurrent visits, try `256`, `1024` buckets, or even more
 - Can be used as a **buffer queue** to merge updates to reduce disk flushes (data can be rebuilt or tolerate loss of power outage)
    - [Add an `Inspector`](#inject-an-inspector) to monitor the eviction event
-   - At the end or intervally call `Walk` to flush the data to storage
+   - At the end or intervally call [`Walk`](#fetch-all-items) to flush the data to storage
 
 ## Special Scenarios
 
@@ -208,6 +213,21 @@ cache.Inspect(func(action int, key string, iface *interface{}, bytes []byte, sta
 })
 ```
 
+### Fetch all items
+
+``` go
+  // only invalid items can be fetched
+	cache.Walk(func(key string, iface *interface{}, bytes []byte, expireAt int64) bool {
+    // `key` is key of item, `iface`/`bytes` is value of item, `expireAt` is the time that item expired
+
+    // - how to fetch right value -
+    //   - `Put`:      `*iface`
+    //   - `PutBytes`: `bytes`
+    //   - `PutInt64`: `ecache.ToInt64(bytes)`
+	  return true // true stands for walk on
+	})
+```
+
 ## Cache Usage Statistics
 
 > The implementation is super simple. After the inspector is injected, only one more atomic operation is added to each operation. See [details](/stats/stats.go#L26).
@@ -231,7 +251,7 @@ var _ = stats.Bind("token", caches...)
 #### Get statistics
 ``` go
 stats.Stats().Range(func(k, v interface{}) bool {
-    fmt.Printf("stats: %s %+v\n", k, v)
+    fmt.Printf("stats: %s %+v\n", k, v) // k is name of pool, v is type of (*stats.StatsNode) that stats count of events use `HitRate` method can know cache hit rate
     return true
 })
 ```
@@ -293,8 +313,16 @@ dist.Init(redigo.Take(pool)) // pool is of *redis.Pool type
 > Called when the data of db changes or is deleted\
 > When error occurs, it will be downgraded to local operation (such as uninitialized or network error)
 ``` go
-dist.OnDel("user", "uid1")
+dist.OnDel("user", "uid1") // user is name of pool, uid1 is the key that want to be deleted
 ```
+
+## Update guide for old [`lrucache`](http://github.com/orca-zhang/lrucache) fans
+
+- Only four steps:
+1. Import `github.com/orca-zhang/ecache` instead of `github.com/orca-zhang/lrucache`
+2. `ecache.NewLRUCache` instead of `lrucache.NewSyncCache`
+3. Third parameter should add unit `*time.Second`
+4. `Delete` method replace to `Del`
 
 # You won't leave empty-handed
 
