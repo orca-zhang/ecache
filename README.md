@@ -251,7 +251,8 @@ var _ = stats.Bind("token", caches...)
 #### 获取统计信息
 ``` go
 stats.Stats().Range(func(k, v interface{}) bool {
-    fmt.Printf("stats: %s %+v\n", k, v) // k是池子名称，v是(*stats.StatsNode)类型，其中统计了各种事件的次数，使用`HitRate`方法可以获得缓存命中率
+    fmt.Printf("stats: %s %+v\n", k, v) // k是池子名称，v是(*stats.StatsNode)类型
+    // 其中统计了各种事件的次数，使用`HitRate`方法可以获得缓存命中率
     return true
 })
 ```
