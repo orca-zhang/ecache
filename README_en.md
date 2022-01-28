@@ -251,7 +251,8 @@ var _ = stats.Bind("token", caches...)
 #### Get statistics
 ``` go
 stats.Stats().Range(func(k, v interface{}) bool {
-    fmt.Printf("stats: %s %+v\n", k, v) // k is name of pool, v is type of (*stats.StatsNode) that stats count of events use `HitRate` method can know cache hit rate
+    fmt.Printf("stats: %s %+v\n", k, v) // k is name of pool, v is type of (*stats.StatsNode）
+    // StatsNode stores count of events, use `HitRate` method can know cache hit rate
     return true
 })
 ```
