@@ -217,15 +217,15 @@ cache.Inspect(func(action int, key string, iface *interface{}, bytes []byte, sta
 
 ``` go
   // only invalid items can be fetched
-	cache.Walk(func(key string, iface *interface{}, bytes []byte, expireAt int64) bool {
+  cache.Walk(func(key string, iface *interface{}, bytes []byte, expireAt int64) bool {
     // `key` is key of item, `iface`/`bytes` is value of item, `expireAt` is the time that item expired
 
     // - how to fetch right value -
     //   - `Put`:      `*iface`
     //   - `PutBytes`: `bytes`
     //   - `PutInt64`: `ecache.ToInt64(bytes)`
-	  return true // true stands for walk on
-	})
+    return true // true stands for walk on
+  })
 ```
 
 ## Cache Usage Statistics
