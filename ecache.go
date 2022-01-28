@@ -57,7 +57,7 @@ type cache struct {
 }
 
 func create(cap uint16) *cache {
-	return &cache{make([][2]uint16, cap+1), make([]node, cap), make(map[string]uint16, cap), 0}
+	return &cache{make([][2]uint16, uint32(cap)+1), make([]node, cap), make(map[string]uint16, cap), 0}
 }
 
 // put a cache item into lru cache, if added return 1, updated return 0
