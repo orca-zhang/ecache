@@ -502,7 +502,7 @@ dist.OnDel("user", "uid1") // user是池子名称，uid1是要删除的key
 
 ## 赞助
 
-通过成为赞助商来支持这个项目。 您的logo将显示在此处，并带有指向您网站的链接。 [[成为赞助商](https://opencollective.com/borm#sponsor)]
+通过成为赞助商来支持这个项目。 您的logo将显示在此处，并带有指向您网站的链接。 [[成为赞助商](https://opencollective.com/ecache#sponsor)]
 
 <a href="https://opencollective.com/ecache/sponsor/0/website" target="_blank"><img src="https://opencollective.com/ecache/sponsor/0/avatar.svg"></a>
 <a href="https://opencollective.com/ecache/sponsor/1/website" target="_blank"><img src="https://opencollective.com/ecache/sponsor/1/avatar.svg"></a>
