@@ -446,7 +446,7 @@ dist.OnDel("user", "uid1") // user是池子名称，uid1是要删除的key
 > 问：为什么不用虚表头方式处理双链表？太弱了吧！
 - 答：2019-04-22泄漏的【[lrucache](http://github.com/orca-zhang/lrucache)】被人在V站上扒出来喷过，还真不是不会，现在的写法，虽然比pointer-to-pointer方式读起来绕脑，但是有20%左右的提升哈！（😄没想到吧）
 
-## Thanks
+## 致谢
 
 感谢在开发过程中进行code review、勘误 & 提出宝贵建议的各位！（排名不分先后）
 
@@ -521,3 +521,4 @@ dist.OnDel("user", "uid1") // user是池子名称，uid1是要删除的key
 <a href="https://opencollective.com/ecache/backer/1/website?requireActive=false" target="_blank"><img src="https://opencollective.com/ecache/backer/1/avatar.svg?requireActive=false"></a>
 <a href="https://opencollective.com/ecache/backer/2/website?requireActive=false" target="_blank"><img src="https://opencollective.com/ecache/backer/2/avatar.svg?requireActive=false"></a>
 <a href="https://opencollective.com/ecache/backer/3/website?requireActive=false" target="_blank"><img src="https://opencollective.com/ecache/backer/3/avatar.svg?requireActive=false"></a>
+<a href="https://opencollective.com/ecache#backers" target="_blank"><img src="https://opencollective.com/ecache/contributors.svg?width=890" /></a>
