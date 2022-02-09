@@ -499,3 +499,25 @@ dist.OnDel("user", "uid1") // user是池子名称，uid1是要删除的key
     </td>
   </tr>
 </table>
+
+## 赞助
+
+通过成为赞助商来支持这个项目。 您的logo将显示在此处，并带有指向您网站的链接。 [[成为赞助商](https://opencollective.com/borm#sponsor)]
+
+<a href="https://opencollective.com/ecache/sponsor/0/website" target="_blank"><img src="https://opencollective.com/ecache/sponsor/0/avatar.svg"></a>
+<a href="https://opencollective.com/ecache/sponsor/1/website" target="_blank"><img src="https://opencollective.com/ecache/sponsor/1/avatar.svg"></a>
+<a href="https://opencollective.com/ecache/sponsor/2/website" target="_blank"><img src="https://opencollective.com/ecache/sponsor/2/avatar.svg"></a>
+<a href="https://opencollective.com/ecache/sponsor/3/website" target="_blank"><img src="https://opencollective.com/ecache/sponsor/3/avatar.svg"></a>
+
+## 贡献者
+
+这个项目的存在要感谢所有做出贡献的人。
+
+请给我们一个💖star💖来支持我们，谢谢。
+
+并感谢我们所有的支持者！ 🙏
+
+<a href="https://opencollective.com/ecache/backer/0/website?requireActive=false" target="_blank"><img src="https://opencollective.com/ecache/backer/0/avatar.svg?requireActive=false"></a>
+<a href="https://opencollective.com/ecache/backer/1/website?requireActive=false" target="_blank"><img src="https://opencollective.com/ecache/backer/1/avatar.svg?requireActive=false"></a>
+<a href="https://opencollective.com/ecache/backer/2/website?requireActive=false" target="_blank"><img src="https://opencollective.com/ecache/backer/2/avatar.svg?requireActive=false"></a>
+<a href="https://opencollective.com/ecache/backer/3/website?requireActive=false" target="_blank"><img src="https://opencollective.com/ecache/backer/3/avatar.svg?requireActive=false"></a>
