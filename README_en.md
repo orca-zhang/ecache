@@ -501,3 +501,26 @@ Gratitude to them who performed code review, errata, and valuable suggestions du
     </td>
   </tr>
 </table>
+
+## Sponsors
+
+Support this project by becoming a sponsor. Your logo will show up here with a link to your website. [[Become a sponsor](https://opencollective.com/ecache#sponsor)]
+
+<a href="https://opencollective.com/ecache/sponsor/0/website" target="_blank"><img src="https://opencollective.com/ecache/sponsor/0/avatar.svg"></a>
+<a href="https://opencollective.com/ecache/sponsor/1/website" target="_blank"><img src="https://opencollective.com/ecache/sponsor/1/avatar.svg"></a>
+<a href="https://opencollective.com/ecache/sponsor/2/website" target="_blank"><img src="https://opencollective.com/ecache/sponsor/2/avatar.svg"></a>
+<a href="https://opencollective.com/ecache/sponsor/3/website" target="_blank"><img src="https://opencollective.com/ecache/sponsor/3/avatar.svg"></a>
+
+## Contributors
+
+This project exists thanks to all the people who contribute.
+
+Please give us a 💖 star 💖 to support us. Thank you.
+
+And thank you to all our backers! 🙏
+
+<a href="https://opencollective.com/ecache/backer/0/website?requireActive=false" target="_blank"><img src="https://opencollective.com/ecache/backer/0/avatar.svg?requireActive=false"></a>
+<a href="https://opencollective.com/ecache/backer/1/website?requireActive=false" target="_blank"><img src="https://opencollective.com/ecache/backer/1/avatar.svg?requireActive=false"></a>
+<a href="https://opencollective.com/ecache/backer/2/website?requireActive=false" target="_blank"><img src="https://opencollective.com/ecache/backer/2/avatar.svg?requireActive=false"></a>
+<a href="https://opencollective.com/ecache/backer/3/website?requireActive=false" target="_blank"><img src="https://opencollective.com/ecache/backer/3/avatar.svg?requireActive=false"></a>
+<a href="https://opencollective.com/ecache#backers" target="_blank"><img src="https://opencollective.com/ecache/contributors.svg?width=890" /></a>
