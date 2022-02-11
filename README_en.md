@@ -119,7 +119,7 @@ c.Del("uid1")
     - If you need to modify, the solution: take out each individual assignment of the field, or use [copier to make a deep copy and modify on the copy](#need-to-modify-and-store-the-object-pointer)
     - Objects can also be stored directly (compared to the previous one, the performance is worse because there are copy operations when taken out)
     - The larger cached objects, the better, the upper level of the business, the better (save memory assembly and data organization time)
-- If you don’t want to erase the hot data due to traversal requests, you can switch to [`LRU-2` mode](#LRU-2-mode), there may be very little loss (💬 [What Is LRU-2](#What-Is-LRU-2))
+- If you don’t want to erase the hot data due to traversal requests, you can switch to [`LRU-2` mode](#LRU-2-mode), there may be very little overhead (💬 [What Is LRU-2](#What-Is-LRU-2))
   - - The size of `LRU2` and `LRU` is set to 1/4 and 3/4, which may perform better。
 - One instance can store multiple types of objects, try adding a prefix when formatting the key and separating it with a colon
 - For scenes with large concurrent visits, try `256`, `1024` buckets, or even more
@@ -230,7 +230,7 @@ cache.Inspect(func(action int, key string, iface *interface{}, bytes []byte, sta
 
 ## Cache Usage Statistics
 
-> The implementation is super simple. After the inspector is injected, only one more atomic operation is added to each operation. See [details](/stats/stats.go#L26).
+> The implementation is super simple. After the inspector is injected, only one more atomic operation is added to each operation. See [details](/stats/stats.go#L34).
 
 ##### Import the `stats` package
 ``` go
@@ -413,7 +413,7 @@ dist.OnDel("user", "uid1") // user is name of pool, uid1 is the key that want to
 - Bucket strategy, automatic selection of power-of-two buckets (reduce lock competition, power-of-two mask operation is faster).
 - Use string type for key (strong scalability; built-in language support for reference, which saves memory).
 - No virtual header for doubly-linked list (although it is a little bit around, but there is an increase of about 20%).
-- Choose `LRU-2` to implement `LRU-K` (simple implementation, almost no additional loss).
+- Choose `LRU-2` to implement `LRU-K` (simple implementation, almost no additional overhead).
 - Store pointers directly (without serialization, the advantage is greatly reduced if you use `[]byte` in some scenarios).
 - Use internal counter for timing (default 100ms accuracy, calibration per second, `pprof` found that time.Now() generates temporary objects, which leads to increased GC time consumption).
 - -Double-linked list uses fixed allocation memory storage, uses zero timestamp to mark delete, reduces GC (and saves memory by more than 50% compared with `bigcache` in the same specification)
@@ -431,7 +431,7 @@ dist.OnDel("user", "uid1") // user is name of pool, uid1 is the key that want to
 - The Third Level says, 'Nothing is faster than nothing' (similar to Occam's razor), you should not come up with optimization if you can remove it.
 - For example, some library want to reduce GC by allocating large block of memory, but provides `[]byte` value storage, which means that it may need extra serialization and copy.
 - If the serialized part can be reused in the protocol layer that `ZeroCopy` can be achieved is OK, but things go contrary to one's wishes, and the `ecache` storage pointer directly so that omit the extra cost.
-- What I want to express is that GC optimization is really important, but more that it should be combined with the scene, and extra loss of client-end also needs to be considered, instead of claiming gc-free, the result is not that way.
+- What I want to express is that GC optimization is really important, but more that it should be combined with the scene, and extra overhead of client-end also needs to be considered, instead of claiming gc-free, the result is not that way.
 - The violent aesthetics I advocate is minimalism, the defect rate is proportional to the amount of code, complex things will be eliminated sooner or later, and `KISS` is the true king.
 - `ecache` has only less than 300 lines in total, and if the bug rate of thousand lines is fixed, there aren't many bugs in it.
 
