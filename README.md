@@ -372,7 +372,7 @@ dist.OnDel("user", "uid1") // user是池子名称，uid1是要删除的key
 > `ecache`是[`lrucache`](http://github.com/orca-zhang/lrucache)库的升级版本
 
 - 最下层是用原生map和双链表实现的最基础`LRU`（最久未访问）
-  - PS：我实现的其他版本（[go](https://github.com/orca-zhang/lrucache) / [C++](https://github.com/ez8-co/linked_hash) / [js](https://github.com/orca-zhang/ecache.js)）在leetcode都是超越100%的解法
+  - PS：我实现的其他版本（[go](https://github.com/orca-zhang/lrucache) / [c++](https://github.com/ez8-co/linked_hash) / [js](https://github.com/orca-zhang/ecache.js)）在leetcode都是超越100%的解法
 - 第2层包了分桶策略、并发控制、过期控制（会自动选择2的幂次个桶，便于掩码计算）
 - 第2.5层用很简单的方式实现了`LRU-2`能力，代码不超过20行，直接看源码（搜关键词`LRU-2`）
 
