@@ -230,7 +230,7 @@ cache.Inspect(func(action int, key string, iface *interface{}, bytes []byte, sta
 
 ## 统计缓存使用情况
 
-> 实现超级简单，注入inspector后，每个操作只多了一次原子操作，具体看[代码](/stats/stats.go#L26)
+> 实现超级简单，注入inspector后，每个操作只多了一次原子操作，具体看[代码](/stats/stats.go#L34)
 
 ##### 引入stats包
 ``` go
