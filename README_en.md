@@ -372,7 +372,7 @@ dist.OnDel("user", "uid1") // user is name of pool, uid1 is the key that want to
 > `ecache` is an upgraded version of the [`lrucache`](http://github.com/orca-zhang/lrucache) library
 
 - Bottom layer is the most basic `LRU` implemented with native map and double-linked lists (the longest not visited)
-   - PS: All other versions I implemented ([go](https://github.com/orca-zhang/lrucache) / [C++](https://github.com/ez8-co/linked_hash) / [js](https://github.com/orca-zhang/ecache.js)) in leetcode are solutions beats 100% submissions.
+   - PS: All other versions I implemented ([go](https://github.com/orca-zhang/lrucache) / [c++](https://github.com/ez8-co/linked_hash) / [js](https://github.com/orca-zhang/ecache.js)) in leetcode are solutions beats 100% submissions.
 - Second layer includes bucketing strategy, concurrency control, and expiration control (it will automatically adapt to power-of-two buckets to facilitate mask calculation)
 - The 2.5 layer implements the `LRU-2` ability in a very simple way, the code does not exceed 20 lines, directly look at the source code (search for the keyword `LRU-2`)
 
