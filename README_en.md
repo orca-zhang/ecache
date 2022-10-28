@@ -36,7 +36,7 @@
 
 - 🤏  Less than 300 lines, cost only ~30s to assemble
 - 🚀  Extremely easy, ultra fast and  concurrency-safe
-- 🏳️‍🌈  Support both `LRU` mode and  [`LRU-2`](#LRU-2-mode) mode inside
+- 🌈  Support both `LRU` mode and  [`LRU-2`](#LRU-2-mode) mode inside
 - 🦖  [Extra plugin](#Distributed-Consistency-Plugin) that support distributed consistency
 
 ## Benchmarks
@@ -447,6 +447,10 @@ dist.OnDel("user", "uid1") // user is name of pool, uid1 is the key that want to
 
 > Q: Why not deal with doubly-linked list in the way of virtual headers? It's bullshxt now!
 - A: The leaked code [[lrucache](http://github.com/orca-zhang/lrucache)] has been challenged on the V2EX on 2019-04-22. It’s really not that I don't know to use virtual headers. Although it is more confusing to read than the pointer-to-pointer method, current way has an improvement of about 20%! (😄did not expect?)
+
+## Related Docs
+
+- [How to improve performance of `ecache` step by step](https://gocn.vip/topics/rw83nMi6QG)
 
 ## Thanks
 
