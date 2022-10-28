@@ -49,8 +49,8 @@
 
 ### Stablity validation in production environment
 - [`Confirmed`]Official Account Backend(hundreds QPS), user & order info, configrations.
-- [`WIP`]Push Platform(tens of thousands QPS), system configrations, deduplication, fixed info cache like app info and etc.
-- [`TBD`]Comment Platform(tens of thousands QPS), user info and distributed consistency plugin for user avatar & nickname.
+- [`Confirmed`]Push Platform(tens of thousands QPS), system configrations, deduplication, fixed info cache like app info and etc.
+- [`Confirmed`]Comment Platform(tens of thousands QPS), user info and distributed consistency plugin for user avatar & nickname.
 
 ## How To Use
 
