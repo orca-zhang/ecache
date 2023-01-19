@@ -443,12 +443,15 @@ dist.OnDel("user", "uid1") // user是池子名称，uid1是要删除的key
 > 问：如果有热热热热key问题怎么解决？
 - 答：本身【本地内存缓存】就是用来抗热key的，这里可以理解成是非常非常热的key（单节点几十万QPS），它们最大的问题是对单一bucket锁定次数过多，影响在同一个bucket的其他数据。那么可以这样：一是改用`LRU-2`不让类似遍历的请求把热数据刷掉，二是除了增加bucket，可以用多实例（同时写入相同的item）+读访问某一个（比如按访问用户uid hash）的方式，让热key有多个副本，不过删除（反写）的时候要注意多实例全部删除，适用于“写少读多`WORM(Write-Once-Read-Many)`”的场景，或者“写多读多”的场景可以把有变化的diff部分单独摘出来转化为“写少读多`WORM(Write-Once-Read-Many)`”的场景。
 
+> 问：如果同一时间并发回源到DB查询同一个资源怎么优化？
+- 答：可以使用[sync/singleflight](https://pkg.go.dev/golang.org/x/sync/singleflight)包。
+
 > 问：为什么不用虚表头方式处理双链表？太弱了吧！
 - 答：2019-04-22泄漏的【[lrucache](http://github.com/orca-zhang/lrucache)】被人在V站上扒出来喷过，还真不是不会，现在的写法，虽然比pointer-to-pointer方式读起来绕脑，但是有20%左右的提升哈！（😄没想到吧）
 
 ## 相关文献
 
-- [如何一步步提升Go内存缓存性能](https://gocn.vip/topics/rw83nMi6QG)
+- [如何一步步提升Go内存缓存性能]([https://gocn.vip/topics/rw83nMi6QG](https://my.oschina.net/u/5577511/blog/5438484))
 
 ## 致谢
 
