@@ -445,12 +445,15 @@ dist.OnDel("user", "uid1") // user is name of pool, uid1 is the key that want to
 > Q: How to solve the problem of very-very-very hot key?
 - A: The [local memory cache] is used for cache hot keys, so very-very-very hot keys here can be understood as single node hundreds of thousands of QPS, the biggest problem is that there are too many lock competitions on a single bucket, which affects other data in the same bucket. Then it can be like this: First, use `LRU-2` to prevent similar traversal requests from flushing hot data. Secondly, in addition to adding buckets, you can write multiple instances (write the same item at the same time) and read a certain one (for example, according to the access user uid hash), let the hot key have multiple copies. But when deleting (reverse writing), be careful to delete all instances of multiple instances, which is suitable for the scenario of "write less read more `WORM (Write-Once-Read-Many)`". " The scenario of “write more, read more” can extract the diff separately and turn it into a `WORM` scenario.
 
+> Q: How to prevent cocurrent request to db at the same time for the same resource?
+- A: Use [singleflight](https://pkg.go.dev/golang.org/x/sync/singleflight).
+
 > Q: Why not deal with doubly-linked list in the way of virtual headers? It's bullshxt now!
 - A: The leaked code [[lrucache](http://github.com/orca-zhang/lrucache)] has been challenged on the V2EX on 2019-04-22. It’s really not that I don't know to use virtual headers. Although it is more confusing to read than the pointer-to-pointer method, current way has an improvement of about 20%! (😄did not expect?)
 
 ## Related Docs
 
-- [How to improve performance of `ecache` step by step](https://gocn.vip/topics/rw83nMi6QG)
+- [How to improve performance of `ecache` step by step](https://my.oschina.net/u/5577511/blog/5438484)
 
 ## Thanks
 
