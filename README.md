@@ -451,7 +451,7 @@ dist.OnDel("user", "uid1") // user是池子名称，uid1是要删除的key
 
 ## 相关文献
 
-- [如何一步步提升Go内存缓存性能]([https://gocn.vip/topics/rw83nMi6QG](https://my.oschina.net/u/5577511/blog/5438484))
+- [如何一步步提升Go内存缓存性能](https://my.oschina.net/u/5577511/blog/5438484)
 
 ## 致谢
 
