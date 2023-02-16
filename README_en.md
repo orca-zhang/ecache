@@ -41,7 +41,154 @@
 
 ## Benchmarks
 
+> :snail: for very-slow, :airplane: for fast, :rocket: for very-fast.
+
 > [👁️‍🗨️click me to see cases](https://github.com/benchplus/gocache) [👁️‍🗨️click me to see results](https://benchplus.github.io/gocache/dev/bench/) (the lower the better except cache hit rate)
+
+<table style="text-align: center">
+   <tr>
+      <td></td>
+      <td><a href="https://github.com/allegro/bigcache">bigcache</a></td>
+      <td><a href="https://github.com/FishGoddess/cachego">cachego</a></td>
+      <td><a href="https://github.com/orca-zhang/ecache"><strong>ecache🌟</strong></a></td>
+      <td><a href="https://github.com/coocood/freecache">freecache</a></td>
+      <td><a href="https://github.com/bluele/gcache">gcache</a></td>
+      <td><a href="https://github.com/patrickmn/go-cache">gocache</a></td>
+   </tr>
+   <tr>
+      <td>PutInt</td>
+      <td>:airplane:</td>
+      <td></td>
+      <td>:rocket:</td>
+      <td>:rocket:</td>
+      <td>:airplane:</td>
+      <td>:airplane:</td>
+   </tr>
+   <tr>
+      <td>GetInt</td>
+      <td>:airplane:</td>
+      <td>:airplane:</td>
+      <td>:rocket:</td>
+      <td></td>
+      <td>:airplane:</td>
+      <td>:airplane:</td>
+   </tr>
+   <tr>
+      <td>Put1K</td>
+      <td>:airplane:</td>
+      <td>:airplane:</td>
+      <td>:rocket:</td>
+      <td>:rocket:</td>
+      <td>:rocket:</td>
+      <td>:airplane:</td>
+   </tr>
+   <tr>
+      <td>Put1M</td>
+      <td>:snail:</td>
+      <td></td>
+      <td>:rocket:</td>
+      <td>:snail:</td>
+      <td>:airplane:</td>
+      <td>:airplane:</td>
+   </tr>
+   <tr>
+      <td>PutTinyObject</td>
+      <td>:airplane:</td>
+      <td></td>
+      <td>:rocket:</td>
+      <td>:rocket:</td>
+      <td>:airplane:</td>
+      <td></td>
+   </tr>
+   <tr>
+      <td>ChangeOutAllInt</td>
+      <td>:airplane:</td>
+      <td></td>
+      <td>:rocket:</td>
+      <td>:rocket:</td>
+      <td>:airplane:</td>
+      <td>:airplane:</td>
+   </tr>
+   <tr>
+      <td>HeavyReadInt</td>
+      <td>:rocket:</td>
+      <td>:rocket:</td>
+      <td>:rocket:</td>
+      <td></td>
+      <td></td>
+      <td>:rocket:</td>
+   </tr>
+   <tr>
+      <td>HeavyReadIntGC</td>
+      <td>:airplane:</td>
+      <td>:rocket:</td>
+      <td>:rocket:</td>
+      <td></td>
+      <td>:airplane:</td>
+      <td>:airplane:</td>
+   </tr>
+   <tr>
+      <td>HeavyWriteInt</td>
+      <td>:rocket:</td>
+      <td>:airplane:</td>
+      <td>:rocket:</td>
+      <td>:rocket:</td>
+      <td></td>
+      <td>:airplane:</td>
+   </tr>
+   <tr>
+      <td>HeavyWriteIntGC</td>
+      <td>:rocket:</td>
+      <td></td>
+      <td>:airplane:</td>
+      <td>:airplane:</td>
+      <td></td>
+      <td></td>
+   </tr>
+   <tr>
+      <td>HeavyWrite1K</td>
+      <td>:snail:</td>
+      <td>:airplane:</td>
+      <td>:rocket:</td>
+      <td>:rocket:</td>
+      <td></td>
+      <td>:airplane:</td>
+   </tr>
+   <tr>
+      <td>HeavyWrite1KGC</td>
+      <td>:snail:</td>
+      <td>:airplane:</td>
+      <td>:rocket:</td>
+      <td>:rocket:</td>
+      <td></td>
+      <td>:airplane:</td>
+   </tr>
+   <tr>
+      <td>HeavyMixedInt</td>
+      <td>:rocket:</td>
+      <td>:airplane:</td>
+      <td>:rocket:</td>
+      <td></td>
+      <td>:airplane:</td>
+      <td>:rocket:</td>
+   </tr>
+   <tr>
+    <td colspan="7">
+      <a href="https://github.com/FishGoddess/cachego"><strong>FishGoddess/cachego</strong></a> and <a href="https://github.com/patrickmn/go-cache"><strong>patrickmn/go-cache</strong></a> are based on simple map with expiration, so that there's no hit rate case.
+    </td>
+   </tr>
+   <tr>
+    <td colspan="7">
+      <a href="https://github.com/kpango/gache"><strong>kpango/gache</strong></a> & <a href="https://github.com/hlts2/gocache"><strong>hlts2/gocache</strong></a> not performs well, so remove them out from the benchmark list.
+    </td>
+   </tr>
+   <tr>
+    <td colspan="7">
+      <a href="https://github.com/patrickmn/go-cache"><strong>patrickmn/go-cache</strong></a> is FIFO mode, and others are LRU mode.
+    </td>
+   </tr>
+</table>
+
 ![](https://github.com/orca-zhang/ecache/raw/master/doc/benchmark.png)
 
 > gc pause test result [code provided by `bigcache`](https://github.com/allegro/bigcache-bench) (the lower the better)
@@ -114,7 +261,7 @@ c.Del("uid1")
 ## Best Practices
 
 - Support any type of value
-  - Provides `Put`/`PutInt64`/`PutBytes` three methods to adapt to different scenarios and need to be used in pairs with `Get`/`GetInt64`/`GetBytes` (the latter two methods have less GC cost)
+  - Provides `Put`/`PutInt64`/`PutBytes` three methods to adapt to different scenarios and need to be used in pairs with `Get`/`GetInt64`/`GetBytes` (the latter two methods have less GC overhead)
   - Store pointers for complex objects (Note: ⚠️ Do not modify its fields once it is put in, even if it is taken out again, because the item may be accessed by other people at the same time)
     - If you need to modify, the solution: take out each individual assignment of the field, or use [copier to make a deep copy and modify on the copy](#need-to-modify-and-store-the-object-pointer)
     - Objects can also be stored directly (compared to the previous one, the performance is worse because there are copy operations when taken out)
@@ -430,7 +577,7 @@ dist.OnDel("user", "uid1") // user is name of pool, uid1 is the key that want to
 - As I mentioned in the C++ version of the performance profiler [several levels of performance optimization](https://github.com/ez8-co/ezpp#性能优化的几个层次), consider at only one level is not good.
 - The Third Level says, 'Nothing is faster than nothing' (similar to Occam's razor), you should not come up with optimization if you can remove it.
 - For example, some library want to reduce GC by allocating large block of memory, but provides `[]byte` value storage, which means that it may need extra serialization and copy.
-- If the serialized part can be reused in the protocol layer that `ZeroCopy` can be achieved is OK, but things go contrary to one's wishes, and the `ecache` storage pointer directly so that omit the extra cost.
+- If the serialized part can be reused in the protocol layer that `ZeroCopy` can be achieved is OK, but very often, it's hard or impossible to reuse in the protocol layer in fact, so the `ecache` storage pointer directly so that it can omit the overhead.
 - What I want to express is that GC optimization is really important, but more that it should be combined with the scene, and extra overhead of client-end also needs to be considered, instead of claiming gc-free, the result is not that way.
 - The violent aesthetics I advocate is minimalism, the defect rate is proportional to the amount of code, complex things will be eliminated sooner or later, and `KISS` is the true king.
 - `ecache` has only less than 300 lines in total, and if the bug rate of thousand lines is fixed, there aren't many bugs in it.
