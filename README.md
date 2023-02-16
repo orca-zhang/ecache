@@ -41,7 +41,154 @@
 
 ## 基准性能
 
+> :snail: 代表很慢, :airplane: 代表快, :rocket: 代表非常快
+
 > [👁️‍🗨️点我看用例](https://github.com/benchplus/gocache) [👁️‍🗨️点我看结果](https://benchplus.github.io/gocache/dev/bench/) （除了缓存命中率数值越低越好）
+
+<table style="text-align: center">
+   <tr>
+      <td></td>
+      <td><a href="https://github.com/allegro/bigcache">bigcache</a></td>
+      <td><a href="https://github.com/FishGoddess/cachego">cachego</a></td>
+      <td><a href="https://github.com/orca-zhang/ecache"><strong>ecache🌟</strong></a></td>
+      <td><a href="https://github.com/coocood/freecache">freecache</a></td>
+      <td><a href="https://github.com/bluele/gcache">gcache</a></td>
+      <td><a href="https://github.com/patrickmn/go-cache">gocache</a></td>
+   </tr>
+   <tr>
+      <td>PutInt</td>
+      <td>:airplane:</td>
+      <td></td>
+      <td>:rocket:</td>
+      <td>:rocket:</td>
+      <td>:airplane:</td>
+      <td>:airplane:</td>
+   </tr>
+   <tr>
+      <td>GetInt</td>
+      <td>:airplane:</td>
+      <td>:airplane:</td>
+      <td>:rocket:</td>
+      <td></td>
+      <td>:airplane:</td>
+      <td>:airplane:</td>
+   </tr>
+   <tr>
+      <td>Put1K</td>
+      <td>:airplane:</td>
+      <td>:airplane:</td>
+      <td>:rocket:</td>
+      <td>:rocket:</td>
+      <td>:rocket:</td>
+      <td>:airplane:</td>
+   </tr>
+   <tr>
+      <td>Put1M</td>
+      <td>:snail:</td>
+      <td></td>
+      <td>:rocket:</td>
+      <td>:snail:</td>
+      <td>:airplane:</td>
+      <td>:airplane:</td>
+   </tr>
+   <tr>
+      <td>PutTinyObject</td>
+      <td>:airplane:</td>
+      <td></td>
+      <td>:rocket:</td>
+      <td>:rocket:</td>
+      <td>:airplane:</td>
+      <td></td>
+   </tr>
+   <tr>
+      <td>ChangeOutAllInt</td>
+      <td>:airplane:</td>
+      <td></td>
+      <td>:rocket:</td>
+      <td>:rocket:</td>
+      <td>:airplane:</td>
+      <td>:airplane:</td>
+   </tr>
+   <tr>
+      <td>HeavyReadInt</td>
+      <td>:rocket:</td>
+      <td>:rocket:</td>
+      <td>:rocket:</td>
+      <td></td>
+      <td></td>
+      <td>:rocket:</td>
+   </tr>
+   <tr>
+      <td>HeavyReadIntGC</td>
+      <td>:airplane:</td>
+      <td>:rocket:</td>
+      <td>:rocket:</td>
+      <td></td>
+      <td>:airplane:</td>
+      <td>:airplane:</td>
+   </tr>
+   <tr>
+      <td>HeavyWriteInt</td>
+      <td>:rocket:</td>
+      <td>:airplane:</td>
+      <td>:rocket:</td>
+      <td>:rocket:</td>
+      <td></td>
+      <td>:airplane:</td>
+   </tr>
+   <tr>
+      <td>HeavyWriteIntGC</td>
+      <td>:rocket:</td>
+      <td></td>
+      <td>:airplane:</td>
+      <td>:airplane:</td>
+      <td></td>
+      <td></td>
+   </tr>
+   <tr>
+      <td>HeavyWrite1K</td>
+      <td>:snail:</td>
+      <td>:airplane:</td>
+      <td>:rocket:</td>
+      <td>:rocket:</td>
+      <td></td>
+      <td>:airplane:</td>
+   </tr>
+   <tr>
+      <td>HeavyWrite1KGC</td>
+      <td>:snail:</td>
+      <td>:airplane:</td>
+      <td>:rocket:</td>
+      <td>:rocket:</td>
+      <td></td>
+      <td>:airplane:</td>
+   </tr>
+   <tr>
+      <td>HeavyMixedInt</td>
+      <td>:rocket:</td>
+      <td>:airplane:</td>
+      <td>:rocket:</td>
+      <td></td>
+      <td>:airplane:</td>
+      <td>:rocket:</td>
+   </tr>
+   <tr>
+    <td colspan="7">
+      <a href="https://github.com/FishGoddess/cachego"><strong>FishGoddess/cachego</strong></a> 和 <a href="https://github.com/patrickmn/go-cache"><strong>patrickmn/go-cache</strong></a> 是简单的map+过期时间的实现，所以没有命中率测试
+    </td>
+   </tr>
+   <tr>
+    <td colspan="7">
+      <a href="https://github.com/kpango/gache"><strong>kpango/gache</strong></a> & <a href="https://github.com/hlts2/gocache"><strong>hlts2/gocache</strong></a> 性能表现不是很好，所以从列表中剔除
+    </td>
+   </tr>
+   <tr>
+    <td colspan="7">
+      <a href="https://github.com/patrickmn/go-cache"><strong>patrickmn/go-cache</strong></a> 是FIFO模式，其他的库都是LRU模式
+    </td>
+   </tr>
+</table>
+
 ![](https://github.com/orca-zhang/ecache/raw/master/doc/benchmark.png)
 
 > gc pause测试结果 [代码由`bigcache`提供](https://github.com/allegro/bigcache-bench)（数值越低越好）
@@ -428,7 +575,7 @@ dist.OnDel("user", "uid1") // user是池子名称，uid1是要删除的key
 - 就像我在C++版性能剖析器里提到的[性能优化的几个层次](https://github.com/ez8-co/ezpp#性能优化的几个层次)，单从一个层次考虑性能并不高明
 - 《第三层次》里有一句“没有比不存在的东西性能更快的了”（类似奥卡姆剃刀），能砍掉一定不要想着优化
 - 比如为了减少GC大块分配内存，却提供`[]byte`的值存储，意味着可能需要序列化、拷贝（虽不在库的性能指标里，人家用还是要算，包括：GC、内存、CPU）
-- 如果序列化的部分可以复用用在协议层拼接，能做到`ZeroCopy`，那也无可厚非，而`ecache`存储指针直接省了额外的部分
+- 如果序列化的部分可以复用用在协议层拼接，能做到`ZeroCopy`，那也无可厚非，但实际分层以后，无法在协议层直接实现拼接，而`ecache`存储指针直接省了额外的部分
 - 我想表达的并不是GC优化不重要，而更多应该结合场景，使用者额外损耗也需要考虑，而非宣称gc-free，结果用起来并非那样
 - 我所崇尚的“暴力美学”是极简，缺陷率和代码量成正比，复杂的东西早晚会被淘汰，`KISS`才是王道
 - `ecache`一共只有不到300行，千行bug率一定的情况下，它的bug不会多
@@ -441,10 +588,10 @@ dist.OnDel("user", "uid1") // user是池子名称，uid1是要删除的key
 - 答：用多个缓存实例。（😄没想到吧）
 
 > 问：如果有热热热热key问题怎么解决？
-- 答：本身【本地内存缓存】就是用来抗热key的，这里可以理解成是非常非常热的key（单节点几十万QPS），它们最大的问题是对单一bucket锁定次数过多，影响在同一个bucket的其他数据。那么可以这样：一是改用`LRU-2`不让类似遍历的请求把热数据刷掉，二是除了增加bucket，可以用多实例（同时写入相同的item）+读访问某一个（比如按访问用户uid hash）的方式，让热key有多个副本，不过删除（反写）的时候要注意多实例全部删除，适用于“写少读多`WORM(Write-Once-Read-Many)`”的场景，或者“写多读多”的场景可以把有变化的diff部分单独摘出来转化为“写少读多`WORM(Write-Once-Read-Many)`”的场景。
+- 答：本身【本地内存缓存】就是用来扛住热key的，这里可以理解成是非常非常热的key（单节点几十万QPS），它们最大的问题是对单一bucket锁定次数过多，影响在同一个bucket的其他数据。那么可以这样：一是改用`LRU-2`不让类似遍历的请求把热数据刷掉，二是除了增加bucket，可以用多实例（同时写入相同的item）+读访问某一个（比如按访问用户uid hash）的方式，让热key有多个副本，不过删除（反写）的时候要注意多实例全部删除，适用于“写少读多`WORM(Write-Once-Read-Many)`”的场景，或者“写多读多”的场景可以把有变化的diff部分单独摘出来转化为“写少读多`WORM(Write-Once-Read-Many)`”的场景。
 
 > 问：如果同一时间并发回源到DB查询同一个资源怎么优化？
-- 答：可以使用[sync/singleflight](https://pkg.go.dev/golang.org/x/sync/singleflight)包。
+- 答：可以使用[sync/singleflight](https://pkg.go.dev/golang.org/x/sync/singleflight)包，同时访问同一个资源时，只回源一次，防止热点数据把DB打爆的问题。
 
 > 问：为什么不用虚表头方式处理双链表？太弱了吧！
 - 答：2019-04-22泄漏的【[lrucache](http://github.com/orca-zhang/lrucache)】被人在V站上扒出来喷过，还真不是不会，现在的写法，虽然比pointer-to-pointer方式读起来绕脑，但是有20%左右的提升哈！（😄没想到吧）
