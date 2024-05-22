@@ -64,7 +64,7 @@ func create(cap uint16) *cache {
 func (c *cache) put(k string, i *interface{}, b []byte, expireAt int64, on inspector) int {
 	if x, ok := c.hmap[k]; ok {
 		c.m[x-1].v.i, c.m[x-1].v.b, c.m[x-1].expireAt = i, b, expireAt
-		c.ajust(x, p, n) // refresh to head
+		c.adjust(x, p, n) // refresh to head
 		return 0
 	}
 
@@ -75,7 +75,7 @@ func (c *cache) put(k string, i *interface{}, b []byte, expireAt int64, on inspe
 		}
 		delete(c.hmap, (*tail).k)
 		c.hmap[k], (*tail).k, (*tail).v.i, (*tail).v.b, (*tail).expireAt = c.dlnk[0][p], k, i, b, expireAt // reuse to reduce gc
-		c.ajust(c.dlnk[0][p], p, n)                                                                        // refresh to head
+		c.adjust(c.dlnk[0][p], p, n)                                                                        // refresh to head
 		return 1
 	}
 
@@ -92,7 +92,7 @@ func (c *cache) put(k string, i *interface{}, b []byte, expireAt int64, on inspe
 // get value of key from lru cache with result
 func (c *cache) get(k string) (*node, int) {
 	if x, ok := c.hmap[k]; ok {
-		c.ajust(x, p, n) // refresh to head
+		c.adjust(x, p, n) // refresh to head
 		return &c.m[x-1], 1
 	}
 	return nil, 0
@@ -102,7 +102,7 @@ func (c *cache) get(k string) (*node, int) {
 func (c *cache) del(k string) (_ *node, _ int, e int64) {
 	if x, ok := c.hmap[k]; ok && c.m[x-1].expireAt > 0 {
 		c.m[x-1].expireAt, e = 0, c.m[x-1].expireAt // mark as deleted
-		c.ajust(x, n, p)                            // sink to tail
+		c.adjust(x, n, p)                            // sink to tail
 		return &c.m[x-1], 1, e
 	}
 	return nil, 0, 0
@@ -118,7 +118,7 @@ func (c *cache) walk(walker func(key string, iface *interface{}, bytes []byte, e
 }
 
 // when f=0, t=1, move to head, otherwise to tail
-func (c *cache) ajust(idx, f, t uint16) {
+func (c *cache) adjust(idx, f, t uint16) {
 	if c.dlnk[idx][f] != 0 { // f=0, t=1, not head node, otherwise not tail
 		c.dlnk[c.dlnk[idx][t]][f], c.dlnk[c.dlnk[idx][f]][t], c.dlnk[idx][f], c.dlnk[idx][t], c.dlnk[c.dlnk[0][t]][f], c.dlnk[0][t] = c.dlnk[idx][f], c.dlnk[idx][t], 0, c.dlnk[0][t], idx, idx
 	}
