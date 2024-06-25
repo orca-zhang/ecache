@@ -1,9 +1,4 @@
-module github.com/orca-zhang/ecache
+module github.com/r6c/ecache
 
-go 1.14
+go 1.22
 
-require (
-	github.com/go-redis/redis/v7 v7.4.1
-	github.com/go-redis/redis/v8 v8.11.4
-	github.com/gomodule/redigo v1.8.6
-)
