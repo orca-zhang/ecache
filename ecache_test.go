@@ -623,3 +623,27 @@ func TestForIssue7(t *testing.T) {
 	}
 	wg.Wait()
 }
+
+func TestIncr(t *testing.T) {
+	lc := NewLRUCache(1, 3, 1*time.Second)
+	lc.Incr("1", 1)
+	if v, _ := lc.GetInt64("1"); v != 1 {
+		t.Error("case 1 failed")
+	}
+	lc.Incr("1", 1)
+	if v, _ := lc.GetInt64("1"); v != 2 {
+		t.Error("case 2 failed")
+	}
+	lc.Incr("1", 1)
+	if v, _ := lc.GetInt64("1"); v != 3 {
+		t.Error("case 3 failed")
+	}
+	lc.Incr("1", 1)
+	if v, _ := lc.GetInt64("1"); v != 4 {
+		t.Error("case 4 failed")
+	}
+	lc.Incr("1", 1)
+	if v, _ := lc.GetInt64("1"); v != 5 {
+		t.Error("case 5 failed")
+	}
+}

@@ -75,7 +75,7 @@ func (c *cache) put(k string, i *interface{}, b []byte, expireAt int64, on inspe
 		}
 		delete(c.hmap, (*tail).k)
 		c.hmap[k], (*tail).k, (*tail).v.i, (*tail).v.b, (*tail).expireAt = c.dlnk[0][p], k, i, b, expireAt // reuse to reduce gc
-		c.adjust(c.dlnk[0][p], p, n)                                                                        // refresh to head
+		c.adjust(c.dlnk[0][p], p, n)                                                                       // refresh to head
 		return 1
 	}
 
@@ -102,7 +102,7 @@ func (c *cache) get(k string) (*node, int) {
 func (c *cache) del(k string) (_ *node, _ int, e int64) {
 	if x, ok := c.hmap[k]; ok && c.m[x-1].expireAt > 0 {
 		c.m[x-1].expireAt, e = 0, c.m[x-1].expireAt // mark as deleted
-		c.adjust(x, n, p)                            // sink to tail
+		c.adjust(x, n, p)                           // sink to tail
 		return &c.m[x-1], 1, e
 	}
 	return nil, 0, 0
@@ -164,6 +164,12 @@ func (c *Cache) put(key string, i *interface{}, b []byte) {
 	c.locks[idx].Lock()
 	status := c.insts[idx][0].put(key, i, b, now()+int64(c.expiration), c.on)
 	c.locks[idx].Unlock()
+	c.on(PUT, key, i, b, status)
+}
+
+func (c *Cache) _put(key string, i *interface{}, b []byte) {
+	idx := hashBKRD(key) & c.mask
+	status := c.insts[idx][0].put(key, i, b, now()+int64(c.expiration), c.on)
 	c.on(PUT, key, i, b, status)
 }
 
@@ -274,6 +280,34 @@ func (c *Cache) Walk(walker func(key string, iface *interface{}, bytes []byte, e
 	}
 }
 
+// Incr - increase the integer value of a key by the given amount
+// If the key does not exist, it is set to the amount.
+// Returns the new value after increment.
+func (c *Cache) Incr(key string, amount int64) (int64, bool) {
+	idx := hashBKRD(key) & c.mask
+	c.locks[idx].Lock()
+	defer c.locks[idx].Unlock()
+
+	var newVal int64
+	if n, s := c._get(key, idx, 0); s > 0 && n.expireAt > 0 && (c.expiration <= 0 || now() < n.expireAt) {
+		// Key exists, get current value
+		currentVal, ok := ToInt64(n.v.b)
+		if !ok {
+			return 0, false // Error converting value
+		}
+		newVal = currentVal + amount
+	} else {
+		// Key does not exist, use amount as initial value
+		newVal = amount
+	}
+
+	// Convert new value to bytes and put it back into cache
+	var data [8]byte
+	binary.LittleEndian.PutUint64(data[:], uint64(newVal))
+	c._put(key, nil, data[:])
+	return newVal, true
+}
+
 const (
 	PUT = iota + 1
 	GET
@@ -281,7 +315,8 @@ const (
 )
 
 // inspector - can be used to statistics cache hit/miss rate or other scenario like ringbuf queue
-//   more details about every parameter: https://github.com/orca-zhang/ecache/blob/master/README_en.md#inject-an-inspector
+//
+//	more details about every parameter: https://github.com/orca-zhang/ecache/blob/master/README_en.md#inject-an-inspector
 type inspector func(action int, key string, iface *interface{}, bytes []byte, status int)
 
 // Inspect - to inspect the actions
