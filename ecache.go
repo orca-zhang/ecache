@@ -214,7 +214,8 @@ func (c *Cache) GetInt64(key string) (int64, bool) {
 
 func (c *Cache) _get(key string, idx, level int32) (*node, int) {
 	if n, s := c.insts[idx][level].get(key); s > 0 && n.expireAt > 0 && (c.expiration <= 0 || now() < n.expireAt) {
-		return n, s // no necessary to remove the expired item here, otherwise will cause GC thrashing
+		n.expireAt = now() + int64(c.expiration) // refresh expiration
+		return n, s                              // no necessary to remove the expired item here, otherwise will cause GC thrashing
 	}
 	return nil, 0
 }
