@@ -22,20 +22,22 @@ func init() {
 		}
 	}()
 }
+
 func hashBKRD(s string) (hash int32) {
 	for i := 0; i < len(s); i++ {
 		hash = hash*131 + int32(s[i])
 	}
 	return hash
 }
-func maskOfNextPowOf2(cap uint16) uint16 {
+
+func maskOfNextPowOf2(cap uint16) uint32 {
 	if cap > 0 && cap&(cap-1) == 0 {
-		return cap - 1
+		return uint32(cap - 1)
 	}
 	cap |= (cap >> 1)
 	cap |= (cap >> 2)
 	cap |= (cap >> 4)
-	return cap | (cap >> 8)
+	return uint32(cap | (cap >> 8))
 }
 
 type value struct {
@@ -56,8 +58,8 @@ type cache struct {
 	last uint16            // last element index when not full
 }
 
-func create(cap uint16) *cache {
-	return &cache{make([][2]uint16, uint32(cap)+1), make([]node, cap), make(map[string]uint16, cap), 0}
+func create(cap uint32) *cache {
+	return &cache{make([][2]uint16, cap+1), make([]node, cap), make(map[string]uint16, cap), 0}
 }
 
 // put a cache item into lru cache, if added return 1, updated return 0
@@ -75,7 +77,7 @@ func (c *cache) put(k string, i *interface{}, b []byte, expireAt int64, on inspe
 		}
 		delete(c.hmap, (*tail).k)
 		c.hmap[k], (*tail).k, (*tail).v.i, (*tail).v.b, (*tail).expireAt = c.dlnk[0][p], k, i, b, expireAt // reuse to reduce gc
-		c.adjust(c.dlnk[0][p], p, n)                                                                        // refresh to head
+		c.adjust(c.dlnk[0][p], p, n)                                                                       // refresh to head
 		return 1
 	}
 
@@ -102,7 +104,7 @@ func (c *cache) get(k string) (*node, int) {
 func (c *cache) del(k string) (_ *node, _ int, e int64) {
 	if x, ok := c.hmap[k]; ok && c.m[x-1].expireAt > 0 {
 		c.m[x-1].expireAt, e = 0, c.m[x-1].expireAt // mark as deleted
-		c.adjust(x, n, p)                            // sink to tail
+		c.adjust(x, n, p)                           // sink to tail
 		return &c.m[x-1], 1, e
 	}
 	return nil, 0, 0
@@ -141,7 +143,7 @@ func NewLRUCache(bucketCnt, capPerBkt uint16, expiration ...time.Duration) *Cach
 	mask := maskOfNextPowOf2(bucketCnt)
 	c := &Cache{make([]sync.Mutex, mask+1), make([][2]*cache, mask+1), 0, func(int, string, *interface{}, []byte, int) {}, int32(mask)}
 	for i := range c.insts {
-		c.insts[i][0] = create(capPerBkt)
+		c.insts[i][0] = create(uint32(capPerBkt))
 	}
 	if len(expiration) > 0 {
 		c.expiration = expiration[0]
@@ -153,7 +155,7 @@ func NewLRUCache(bucketCnt, capPerBkt uint16, expiration ...time.Duration) *Cach
 // `capPerBkt` is length of each LRU-2 bucket, can store extra `capPerBkt * bucketCnt` count of items in Cache at most
 func (c *Cache) LRU2(capPerBkt uint16) *Cache {
 	for i := range c.insts {
-		c.insts[i][1] = create(capPerBkt)
+		c.insts[i][1] = create(uint32(capPerBkt))
 	}
 	return c
 }

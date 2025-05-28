@@ -622,4 +622,22 @@ func TestForIssue7(t *testing.T) {
 		}()
 	}
 	wg.Wait()
+
+	lc = NewLRUCache(65535, 16, 100*time.Millisecond)
+	for index := 0; index < 1000000; index++ {
+		wg.Add(3)
+		go func() {
+			lc.Put("1", "2")
+			wg.Done()
+		}()
+		go func() {
+			lc.Get("1")
+			wg.Done()
+		}()
+		go func() {
+			lc.Del("1")
+			wg.Done()
+		}()
+	}
+	wg.Wait()
 }
