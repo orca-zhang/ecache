@@ -9,7 +9,7 @@
 
 <p align="center">
   <a href="/go.mod#L3" alt="go version">
-    <img src="https://img.shields.io/badge/go%20version-%3E=1.11-brightgreen?style=flat"/>
+    <img src="https://img.shields.io/badge/go%20version-%3E=1.22-brightgreen?style=flat"/>
   </a>
   <a href="https://goreportcard.com/badge/github.com/orca-zhang/ecache" alt="goreport">
     <img src="https://goreportcard.com/badge/github.com/orca-zhang/ecache">

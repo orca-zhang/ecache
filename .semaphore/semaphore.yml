@@ -14,7 +14,7 @@ blocks:
             - sudo service redis-server start
             - sudo netstat -anpt | grep 6379
             - sudo cat /etc/redis/redis.conf
-            - sem-version go 1.14
+            - sem-version go 1.22
             - export GO111MODULE=on
             - export GOPATH=~/go
             - 'export PATH=/home/semaphore/go/bin:$PATH'

@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"container/list"
 	"fmt"
+	"strings"
 	"sync"
 	"testing"
 	"time"
@@ -302,12 +303,36 @@ func Test_walk(t *testing.T) {
 		})
 }
 
-func TestHashBKRD(t *testing.T) {
-	if hashBKRD("12345") != int32(1658880867) {
-		t.Error("case 1 failed")
+func TestStringKeySharding(t *testing.T) {
+	keys := []string{"", "\x00", "user:42", "\u4f60\u597d"}
+	for _, length := range []int{1, 4, 8, 9, 16, 17, 32, 64, 128, 129, 240, 241, 1024} {
+		keys = append(keys, strings.Repeat("k", length))
 	}
-	if hashBKRD("abcdefghijklmnopqrstuvwxyz") != int32(-1761441311) {
-		t.Error("case 2 failed")
+	for _, lru2 := range []bool{false, true} {
+		t.Run(fmt.Sprintf("LRU2=%t", lru2), func(t *testing.T) {
+			c := NewLRUCache(256, uint16(len(keys)))
+			if lru2 {
+				c.LRU2(uint16(len(keys)))
+			}
+			for _, key := range keys {
+				c.Put(key, key)
+			}
+			for _, key := range keys {
+				if got, ok := c.Get(key); !ok || got != key {
+					t.Fatalf("Get(%q) = %v, %t; want original value", key, got, ok)
+				}
+			}
+			for _, key := range keys {
+				c.Put(key, "updated")
+				if got, ok := c.Get(key); !ok || got != "updated" {
+					t.Fatalf("Get(%q) = %v, %t; want updated value", key, got, ok)
+				}
+				c.Del(key)
+				if _, ok := c.Get(key); ok {
+					t.Fatalf("Get(%q) still found a deleted key", key)
+				}
+			}
+		})
 	}
 }
 

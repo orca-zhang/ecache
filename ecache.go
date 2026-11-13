@@ -5,6 +5,8 @@ import (
 	"sync"
 	"sync/atomic"
 	"time"
+
+	"github.com/zeebo/xxh3"
 )
 
 var clock, p, n = time.Now().UnixNano(), uint16(0), uint16(1)
@@ -21,13 +23,6 @@ func init() {
 			time.Sleep(100 * time.Millisecond)
 		}
 	}()
-}
-
-func hashBKRD(s string) (hash int32) {
-	for i := 0; i < len(s); i++ {
-		hash = hash*131 + int32(s[i])
-	}
-	return hash
 }
 
 func maskOfNextPowOf2(cap uint16) uint32 {
@@ -162,7 +157,7 @@ func (c *Cache) LRU2(capPerBkt uint16) *Cache {
 
 // put - put a item into cache
 func (c *Cache) put(key string, i *interface{}, b []byte) {
-	idx := hashBKRD(key) & c.mask
+	idx := int32(xxh3.HashString(key)) & c.mask
 	c.locks[idx].Lock()
 	status := c.insts[idx][0].put(key, i, b, now()+int64(c.expiration), c.on)
 	c.locks[idx].Unlock()
@@ -223,7 +218,7 @@ func (c *Cache) _get(key string, idx, level int32) (*node, int) {
 }
 
 func (c *Cache) get(key string) (i *interface{}, b []byte, _ bool) {
-	idx := hashBKRD(key) & c.mask
+	idx := int32(xxh3.HashString(key)) & c.mask
 	c.locks[idx].Lock()
 	n, s := (*node)(nil), 0
 	if c.insts[idx][1] == nil { // (if LRU-2 mode not support, loss is little)
@@ -249,7 +244,7 @@ func (c *Cache) get(key string) (i *interface{}, b []byte, _ bool) {
 
 // Del - delete item by key from cache
 func (c *Cache) Del(key string) {
-	idx := hashBKRD(key) & c.mask
+	idx := int32(xxh3.HashString(key)) & c.mask
 	c.locks[idx].Lock()
 	n, s, e := c.insts[idx][0].del(key)
 	if c.insts[idx][1] != nil { // (if LRU-2 mode not support, loss is little)
