@@ -18,6 +18,7 @@ blocks:
             - export GO111MODULE=on
             - export GOPATH=~/go
             - 'export PATH=/home/semaphore/go/bin:$PATH'
+            - 'git config --global url."https://github.com/".insteadOf "git@github.com:"'
             - checkout
             - go get ./...
             - go build -v .
