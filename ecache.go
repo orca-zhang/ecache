@@ -5,8 +5,10 @@ import (
 	"sync"
 	"sync/atomic"
 	"time"
+	"unsafe"
 
 	"github.com/zeebo/xxh3"
+	"golang.org/x/sys/cpu"
 )
 
 var clock, p, n = time.Now().UnixNano(), uint16(0), uint16(1)
@@ -121,9 +123,17 @@ func (c *cache) adjust(idx, f, t uint16) {
 	}
 }
 
+const cacheLineSize = max(64, unsafe.Sizeof(cpu.CacheLinePad{}))
+
+// Keep independent shard locks on separate cache lines with a power-of-two stride.
+type cacheMutex struct {
+	sync.Mutex
+	_ [cacheLineSize - unsafe.Sizeof(sync.Mutex{})]byte
+}
+
 // Cache - concurrent cache structure
 type Cache struct {
-	locks      []sync.Mutex
+	locks      []cacheMutex
 	insts      [][2]*cache // level-0 for normal LRU, level-1 for LRU-2
 	expiration time.Duration
 	on         inspector
@@ -136,7 +146,7 @@ type Cache struct {
 // optional `expiration` is item alive time (and we only use lazy eviction here), default `0` stands for permanent
 func NewLRUCache(bucketCnt, capPerBkt uint16, expiration ...time.Duration) *Cache {
 	mask := maskOfNextPowOf2(bucketCnt)
-	c := &Cache{make([]sync.Mutex, mask+1), make([][2]*cache, mask+1), 0, func(int, string, *interface{}, []byte, int) {}, int32(mask)}
+	c := &Cache{make([]cacheMutex, mask+1), make([][2]*cache, mask+1), 0, func(int, string, *interface{}, []byte, int) {}, int32(mask)}
 	for i := range c.insts {
 		c.insts[i][0] = create(uint32(capPerBkt))
 	}

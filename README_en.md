@@ -41,6 +41,8 @@
 
 ## Benchmarks
 
+See the [2026-11-19 benchmark report](benchmarks/2026-11-19/README.md) for the shard-lock optimization and before/after measurements.
+
 > :snail: for very-slow, :airplane: for fast, :rocket: for very-fast.
 
 > [👁️‍🗨️click me to see cases](https://github.com/benchplus/gocache) [👁️‍🗨️click me to see results](https://benchplus.github.io/gocache/dev/bench/) (the lower the better except cache hit rate)

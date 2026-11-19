@@ -1,0 +1,79 @@
+{
+  "baseline_tag": "v1.2.0",
+  "release": "v1.2.1",
+  "candidate_parent": "f430c8ef575c0521028dd0967e340865af7bbefb",
+  "toolchain": "go1.27.4 darwin/arm64",
+  "cpu": "Apple M4 Pro, 12 logical CPUs",
+  "os": "macOS 26.6.2",
+  "cache_line_bytes": 128,
+  "cache_config": {
+    "shards": 16,
+    "capacity_per_shard": 64,
+    "expiration": "1m"
+  },
+  "runs": 5,
+  "run_order": [
+    [
+      "baseline",
+      "candidate"
+    ],
+    [
+      "candidate",
+      "baseline"
+    ],
+    [
+      "baseline",
+      "candidate"
+    ],
+    [
+      "candidate",
+      "baseline"
+    ],
+    [
+      "baseline",
+      "candidate"
+    ]
+  ],
+  "command_arguments": [
+    "-test.run=^$",
+    "-test.bench=^BenchmarkGet",
+    "-test.benchmem",
+    "-test.benchtime=300ms",
+    "-test.cpu=1,4,8",
+    "-test.count=1"
+  ],
+  "inputs": {
+    "baseline": {
+      "ecache.go": "4beb2897ecbe6ddf98d6298ac63b05e346aaab64b9b438eeab28dbfd665ffaa3",
+      "cache_bench_test.go": "a2f442f7f93949aaad6085e082187a455d67a2bccb17f51ced6f3e7c7ff7f39f",
+      "go.mod": "a9f481f6fb46e8f73710a7e2cae34d4e497034407f4bdb254b05c84e2f283c3d",
+      "go.sum": "33d5f30b12594eeb0d39b492839260212366cb6b382505bf85defbe669197160",
+      "binary_sha256": "68486beda8752ac11e3eeea4dd3a8c4f06aa7bae7c948c91f8364c11357a6131"
+    },
+    "candidate": {
+      "ecache.go": "6dadda1b08ce35e57dc8ab8ba363e1fd68b6da087d9a670398e5af3be7f43c73",
+      "cache_bench_test.go": "a2f442f7f93949aaad6085e082187a455d67a2bccb17f51ced6f3e7c7ff7f39f",
+      "go.mod": "4dc1c740b109f3d5c70b5e72bdf153fe0b174da4e697374e13229736bc5a0d99",
+      "go.sum": "33d5f30b12594eeb0d39b492839260212366cb6b382505bf85defbe669197160",
+      "binary_sha256": "b5d1b7e82339af73e91d7c1507529878569cc5d3dd412b6ca02b8be4a964962b"
+    }
+  },
+  "verification": {
+    "go127_full_local_cache_stats_dist": "passed; includes original million-iteration concurrent tests",
+    "go127_core_race": "passed; functional tests and all benchmark access patterns, 1000 iterations each at cpu=1,4,8",
+    "go122_external_link_race": "passed; existing LC_DYSYMTAB linker warning on macOS",
+    "go122_cross_compile": [
+      "linux/amd64",
+      "linux/arm64",
+      "js/wasm"
+    ],
+    "redis_version": "8.10.2",
+    "redis_adapters": [
+      "go-redis/v8",
+      "go-redis/v7",
+      "redigo"
+    ],
+    "redis_result": "all adapter tests passed against isolated local Redis",
+    "go_vet": "all packages passed"
+  }
+}

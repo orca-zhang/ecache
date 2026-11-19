@@ -41,6 +41,8 @@
 
 ## 基准性能
 
+分片锁布局优化与新旧版本实测见 [2026-11-19 基准报告](benchmarks/2026-11-19/README.md)。
+
 > :snail: 代表很慢, :airplane: 代表快, :rocket: 代表非常快
 
 > [👁️‍🗨️点我看用例](https://github.com/benchplus/gocache) [👁️‍🗨️点我看结果](https://benchplus.github.io/gocache/dev/bench/) （除了缓存命中率数值越低越好）

@@ -1,0 +1,3 @@
+ok  	github.com/orca-zhang/ecache/dist/goredis	11.397s
+ok  	github.com/orca-zhang/ecache/dist/goredis/v7	11.406s
+ok  	github.com/orca-zhang/ecache/dist/redigo	11.406s
